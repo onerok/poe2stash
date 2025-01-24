@@ -1,0 +1,12 @@
+{
+  "knowhow config": {
+    "sources": [
+      {
+        "kind": "file",
+        "data": [
+          ".knowhow/knowhow.json"
+        ]
+      }
+    ]
+  }
+}

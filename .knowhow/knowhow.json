@@ -1,0 +1,43 @@
+{
+  "promptsDir": ".knowhow/prompts",
+  "modules": [],
+  "plugins": [
+    "embeddings",
+    "language",
+    "vim",
+    "github",
+    "asana",
+    "jira",
+    "linear",
+    "download",
+    "figma"
+  ],
+  "lintCommands": {
+    "js": "eslint",
+    "ts": "tslint"
+  },
+  "sources": [
+    {
+      "input": "src/**/*.mdx",
+      "output": ".knowhow/docs/",
+      "prompt": "BasicCodeDocumenter"
+    },
+    {
+      "input": ".knowhow/docs/**/*.mdx",
+      "output": ".knowhow/docs/README.mdx",
+      "prompt": "BasicProjectDocumenter"
+    }
+  ],
+  "embedSources": [
+    {
+      "input": "electron/**/*.ts",
+      "output": ".knowhow/embeddings/poe2stash.json",
+      "chunkSize": 2000
+    },
+    {
+      "input": "src/**/*.ts*",
+      "output": ".knowhow/embeddings/poe2stash.json",
+      "chunkSize": 2000
+    }
+  ]
+}
