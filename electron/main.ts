@@ -1,5 +1,5 @@
 import { app, BrowserWindow } from "electron";
-import { createRequire } from "node:module";
+//import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import express from "express";
@@ -7,7 +7,7 @@ import cors from "cors";
 import * as routes from "./app/routes";
 const PORT = process.env.PORT || 7555;
 
-const require = createRequire(import.meta.url);
+//const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const server = express();
 
