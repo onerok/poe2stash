@@ -130,6 +130,7 @@ export interface Poe2Item {
   };
   item: {
     realm: string;
+    corrupted: boolean;
     verified: boolean;
     w: number;
     h: number;
