@@ -236,22 +236,36 @@ class PriceEstimator {
     const statEntry = this.getStatEntryForMod(output);
 
     if (!statEntry) {
-      console.log(`No stat entry found for mod: ${mod}`);
-      throw new Error(`No stat entry found for mod: ${mod}`);
+      console.log(`No stat entry found for mod: ${mod}, ${output}`);
+      throw new Error(`No stat entry found for mod: ${mod}, ${output}`);
+    }
+
+    let value1 = match ? Number(match[1]) : undefined;
+    let value2 = match && match[2] ? Number(match[2]) : undefined;
+
+    if (statEntry.text !== output) {
+      // we had to invert to find the stat entry
+      if (value1) value1 = -value1;
+      if (value2) value2 = -value2;
     }
 
     return {
       mod: mod,
       parsed: output,
-      value1: match ? Number(match[1]) : undefined,
-      value2: match && match[2] ? Number(match[2]) : undefined,
+      value1,
+      value2,
       hash: statEntry.id,
     };
   }
 
   getStatEntryForMod(mod: string) {
     const stats = Stats.map((statGroup) =>
-      statGroup.entries.filter((entry) => entry.text === mod),
+      statGroup.entries.filter(
+        (entry) =>
+          entry.text === mod ||
+          entry.text === mod.replace("increased", "reduced") ||
+          entry.text === mod.replace("reduced", "increased"),
+      ),
     ).flat();
     return stats.length > 0 ? stats[0] : null;
   }
