@@ -1,11 +1,7 @@
 import { Poe2Item } from "../services/types";
-import { ExternalLink, ClipboardCopy } from "lucide-react";
 import { useState } from "react";
 import { PriceChecker } from "../services/PriceEstimator";
 
-const CopyIcon = () => <ClipboardCopy />;
-
-const SearchIcon = () => <ExternalLink />;
 
 const ItemNameWithRarity: React.FC<{ item: Poe2Item }> = ({ item }) => {
   const getRarityColor = (rarity: string = "magic") => {
