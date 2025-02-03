@@ -37,6 +37,8 @@ export type Poe2ItemSearch = Partial<{
   stack_size: number;
   corrupted: "true" | "false" | "any";
 
+  status: "online" | "any"
+
   price: number;
   currency: string;
 

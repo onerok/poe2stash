@@ -232,7 +232,7 @@ class Poe2TradeService {
     return Cache.getJson<string[]>(cacheKey) || [];
   }
 
-  private upsertCachedAccountItems(account: string, items: string[]) {
+  upsertCachedAccountItems(account: string, items: string[]) {
     const existingItems = this.getCachedAccountItems(account);
 
     if (existingItems) {

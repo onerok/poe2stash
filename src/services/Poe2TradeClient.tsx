@@ -52,7 +52,7 @@ export class Poe2TradeClient {
     const payload = {
       query: {
         type: searchParams.baseType,
-        status: { option: "any" },
+        status: { option: searchParams.status || "any" },
         stats: [
           {
             type: "and",

@@ -2,6 +2,7 @@ import { Price, Poe2Item } from "./types";
 import { Poe2Trade } from "./poe2trade";
 import { Cache } from "./Cache";
 import { Stats } from "../data/stats";
+import { wait } from "../utils/wait";
 
 export type Stat = (typeof Stats)[0]["entries"][0];
 export type Explicit = Poe2Item["item"]["extended"]["mods"]["explicit"][0];
@@ -38,6 +39,7 @@ class PriceEstimator {
     const parsedMods = this.parseItemMods(item);
 
     const allPrices: Price[] = [];
+    const currency = "exalted";
 
     // loop until we have 10 prices or we have no more mods to search
     for (
@@ -62,34 +64,36 @@ class PriceEstimator {
           ...Poe2Trade.range(s!.value1),
         })),
       });
-      const topItems = await Poe2Trade.fetchItems(topMatch.result);
+      await wait(1000)
 
-      const currencies = Poe2Trade.toUniqueItems(
-        topItems.result
-          .map((i) => i.listing.price.currency)
-          .concat(topItems.result.map((i) => i.listing.price.currency)),
-      );
-
-      const currency = "exalted";
-      await this.fetchManyExchangeRates(currency, currencies);
-
-      const topPrices = this.toEquivalentPrices(
-        currency,
-        topItems.result.map((i) => ({
-          amount: i.listing.price.amount,
-          currency: i.listing.price.currency,
-        })),
-      );
+      const sampledItems = this.sampleRange(topMatch.result, 10);
+      const topPrices = await this.getPricesForItemIds(sampledItems);
+      await wait(5000);
 
       allPrices.push(...topPrices);
     }
 
+    if (item.item.rarity.toLowerCase() === "normal") {
+      // no explicits for normals, so we'll need to lookup seperately
+      console.log("fetching normal item", allPrices)
+      const normal = await Poe2Trade.getItemByAttributes({
+        rarity: item.item.rarity,
+        baseType: item.item.baseType,
+        status: "online"
+      });
+      await wait(1000);
+      const sampledItems = this.sampleRange(normal.result, 10);
+      const normalPrices = await this.getPricesForItemIds(sampledItems);
+      allPrices.push(...normalPrices);
+    }
+
+    await this.fetchManyExchangeRates(currency, allPrices.map(p => p.currency))
     const estimate = this.priceEstimate(allPrices);
 
     estimate.price = await this.upscalePrice(estimate.price);
     estimate.stdDev = await this.upscalePrice(estimate.stdDev);
 
-    console.log({ allPrices, estimate });
+    console.log({ allPrices, estimate, item });
 
     this.cachePriceEstimate(item.item.id, estimate);
     return estimate;
@@ -98,6 +102,37 @@ class PriceEstimator {
     // we can detect this by the general pattern of item_type, item_rarity, (mod1, mod2, ...modN) => price floor
     // we can also learn the max tiers by performing a search for item_type, mod descending. we should save these facts
     // unique items should be handled by searching for the exact item with the mods equal or greater
+  }
+
+  async getPricesForItemIds(ids: string[], currency = "exalted") {
+    const items = await Poe2Trade.fetchItems(ids);
+
+    const currencies = Poe2Trade.toUniqueItems(
+      items.result
+        .map((i) => i.listing.price.currency)
+        .concat(items.result.map((i) => i.listing.price.currency)),
+    );
+
+
+    await this.fetchManyExchangeRates(currency, currencies);
+
+    const prices = this.toEquivalentPrices(
+      currency,
+      items.result.map((i) => ({
+        amount: i.listing.price.amount,
+        currency: i.listing.price.currency,
+      })),
+    );
+
+    return prices
+  }
+
+  sampleRange(items: string[], want: number) {
+    if(items.length <= want) {
+      return items;
+    }
+    let skip = Math.floor(items.length / want);
+    return new Array(want).fill(0).map((_v, i) => items[i * skip])
   }
 
   async upscalePrice(price: Price) {
@@ -191,7 +226,7 @@ class PriceEstimator {
   }
 
   async fetchManyExchangeRates(iWant: string, iHave: string[]) {
-    for (const currency of iHave) {
+    for (const currency of Poe2Trade.toUniqueItems(iHave)) {
       await this.exchangeRate(iWant, currency);
     }
   }

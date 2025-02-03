@@ -76,11 +76,14 @@ const MainPage: React.FC = () => {
             // try to fetch in batches after 5 seconds of events, incase many items come in at once
             if (newItemsBatch.length > 0) {
               const toFetch = Poe2Trade.toUniqueItems([...newItemsBatch]);
+              Poe2Trade.upsertCachedAccountItems(accountName, toFetch);
+
               newItemsBatch = [];
               const newItems = await Poe2Trade.fetchAllItems(
                 accountName,
                 toFetch,
               );
+
 
               if (newItems.length > 0) {
                 setLiveSearchItems((prevItems) => [

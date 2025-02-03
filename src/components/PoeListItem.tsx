@@ -79,7 +79,7 @@ export function PoeListItem(props: {
               {item.listing.price.amount} {item.listing.price.currency}
               {props.priceSuggestion && (
                 <p className="font-semibold text-orange-600">
-                  Suggested: {Math.round(props.priceSuggestion.amount)}{" "}
+                  estimate: ~{Math.round(props.priceSuggestion.amount)} {props.priceSuggestion.currency}
                 </p>
               )}
             </div>
