@@ -5,7 +5,7 @@ export type Poe2ItemSearch = Partial<{
   ilvl: number;
   quality: number;
 
-  explicit: Array<{ id: string; min?: number; max?: number }>;
+  explicit?: Array<{ id: string; min?: number; max?: number }>;
 
   // equipment
   ar: number;
@@ -146,7 +146,7 @@ export interface Poe2Item {
     properties: ItemProperty[];
     requirements: ItemRequirement[];
     implicitMods?: string[];
-    explicitMods: string[];
+    explicitMods?: string[];
     enchantMods?: string[];
     frameType: number;
     extended: {

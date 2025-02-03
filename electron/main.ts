@@ -3,13 +3,17 @@ import { app, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import express from "express";
+import { Request } from "express";
 import cors from "cors";
 import * as routes from "./app/routes";
+import { WebSocketServer } from "ws";
+import http from "http";
+
 const PORT = process.env.PORT || 7555;
 
 //const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const server = express();
+const expressApp = express();
 
 // The built directory structure
 //
@@ -46,7 +50,9 @@ function createWindow() {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
   });
 
-  win.webContents.openDevTools();
+  if (process.env.NODE_ENV === "development") {
+    win.webContents.openDevTools();
+  }
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
@@ -76,8 +82,15 @@ app.on("activate", () => {
 
 app.whenReady().then(createWindow);
 
-server.use(cors());
-server.use("/proxy", routes.proxy);
+expressApp.use(cors());
+expressApp.use("/proxy", routes.proxy);
+const server = http.createServer(expressApp);
+const wss = new WebSocketServer({ server });
+
+wss.on("connection", (ws, request) => {
+  routes.wsProxy(ws, request as Request);
+});
+
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

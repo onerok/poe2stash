@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import { app, net } from "electron";
+import { app, net, session, BrowserWindow } from "electron";
+import WebSocket from "ws";
 
-const hosts = [{ url: "pathofexile.com" }];
+const hosts = [{ url: "www.pathofexile.com" }];
 
 export const proxy = (req: Request, res: Response) => {
   const proxyTo = req.url.split("/")[1];
@@ -62,4 +63,92 @@ export const proxy = (req: Request, res: Response) => {
 
     req.pipe(proxyReqStream);
   }
+};
+
+async function getCookiesHeader(host: string): Promise<string> {
+  try {
+    // Electron's cookie API requires a URL; use HTTPS for secure cookies.
+    const cookies = await session.defaultSession.cookies.get({
+      url: `https://${host}`,
+    });
+    return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+  } catch (error) {
+    console.error("Failed to retrieve cookies:", error);
+    return "";
+  }
+}
+
+export const wsProxy = async (clientSocket: WebSocket, req: Request) => {
+  // Split and filter the URL path to remove empty strings.
+  const parts = req.url.split("/").filter(Boolean);
+  // parts example: ["proxy", "pathofexile.com", "api", "trade2", "live", "poe2", "Standard", "d9eKbLPTJ"]
+
+  // The host should be the second segment (after the "proxy" prefix).
+  const proxyTo = parts[1];
+  console.log({ proxyTo });
+
+  const host = hosts.find((host) => proxyTo.includes(host.url));
+  if (!host) {
+    // Use a valid WebSocket close code, e.g., 1008 (Policy Violation)
+    clientSocket.close(1008, `Invalid host ${proxyTo}`);
+    return;
+  }
+
+  // The remainder of the URL (after the host)
+  const remainder = parts.slice(2).join("/");
+  const url = `wss://${host.url}/${remainder}`;
+  console.log(`Proxying WebSocket connection to ${url}`);
+
+  // Get cookies from the system.
+  const cookieHeader = await getCookiesHeader(host.url);
+
+  console.log({ cookieHeader });
+
+  // Create a WebSocket connection to the target server.
+  const ws = new WebSocket(url, {
+    headers: {
+      cookie: cookieHeader,
+      origin: "https://www.pathofexile.com",
+      "user-agent": app.userAgentFallback,
+    },
+  });
+
+  ws.on("open", () => {
+    console.log("WebSocket connection opened");
+  });
+
+  ws.on("message", (data) => {
+    clientSocket.send(data);
+  });
+
+  ws.on("close", () => {
+    console.log("WebSocket connection closed");
+    clientSocket.close();
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+    if (error.message.includes("401")) {
+      const authwin = new BrowserWindow({
+        width: 800,
+        height: 600,
+      });
+      authwin.loadURL(
+        "https://www.pathofexile.com/trade2/search/poe2/Standard/",
+      );
+
+      clientSocket.close(1008, "Unauthorized");
+      return;
+    }
+    // Use a valid error code, e.g., 1011 (Internal Error)
+    clientSocket.close(1011, error.message || "WebSocket error");
+  });
+
+  clientSocket.on("message", (data) => {
+    ws.send(data);
+  });
+
+  clientSocket.on("close", () => {
+    ws.close();
+  });
 };

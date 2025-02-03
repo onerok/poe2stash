@@ -8,6 +8,32 @@ export type Explicit = Poe2Item["item"]["extended"]["mods"]["explicit"][0];
 export type Estimate = { price: Price; stdDev: Price };
 
 class PriceEstimator {
+  async findMatchingItem(item: Poe2Item) {
+    const parsedMods = this.parseItemMods(item);
+    const topMods = await this.getHighTierMods(
+      item,
+      parsedMods.explicits?.length || 0,
+    );
+
+    const topStats = topMods
+      .map((s) => s.magnitudes)
+      .flat()
+      .map((mag) => mag.hash)
+      .map((hash) => parsedMods?.explicits?.find((p) => p.hash === hash))
+      .filter((p) => p);
+
+    const topMatch = await Poe2Trade.getItemByAttributes({
+      rarity: item.item.rarity,
+      baseType: item.item.baseType,
+      explicit: topStats.map((s) => ({
+        id: s!.hash,
+        ...Poe2Trade.range(s!.value1),
+      })),
+    });
+
+    return topMatch;
+  }
+
   async estimateItemPrice(item: Poe2Item) {
     const parsedMods = this.parseItemMods(item);
 
@@ -15,7 +41,7 @@ class PriceEstimator {
 
     // loop until we have 10 prices or we have no more mods to search
     for (
-      let i = parsedMods.explicits.length;
+      let i = parsedMods?.explicits?.length || 0;
       i >= 3 && allPrices.length < 10;
       i--
     ) {
@@ -25,7 +51,7 @@ class PriceEstimator {
         .map((s) => s.magnitudes)
         .flat()
         .map((mag) => mag.hash)
-        .map((hash) => parsedMods.explicits.find((p) => p.hash === hash))
+        .map((hash) => parsedMods?.explicits?.find((p) => p.hash === hash))
         .filter((p) => p);
 
       const topMatch = await Poe2Trade.getItemByAttributes({
@@ -59,18 +85,9 @@ class PriceEstimator {
     }
 
     const estimate = this.priceEstimate(allPrices);
-    const divineRate = await this.exchangeRate("exalted", "divine");
 
-    if (estimate.price.amount > divineRate) {
-      // convert from exalted to divine if large enough
-      estimate.price.amount = estimate.price.amount / divineRate;
-      estimate.price.currency = "divine";
-    }
-
-    if (estimate.stdDev.amount > divineRate) {
-      estimate.stdDev.amount = estimate.stdDev.amount / divineRate;
-      estimate.stdDev.currency = "divine";
-    }
+    estimate.price = await this.upscalePrice(estimate.price);
+    estimate.stdDev = await this.upscalePrice(estimate.stdDev);
 
     console.log({ allPrices, estimate });
 
@@ -81,6 +98,17 @@ class PriceEstimator {
     // we can detect this by the general pattern of item_type, item_rarity, (mod1, mod2, ...modN) => price floor
     // we can also learn the max tiers by performing a search for item_type, mod descending. we should save these facts
     // unique items should be handled by searching for the exact item with the mods equal or greater
+  }
+
+  async upscalePrice(price: Price) {
+    const divineRate = await this.exchangeRate("exalted", "divine");
+    if (price.amount > divineRate) {
+      // convert from exalted to divine if large enough
+      price.amount = price.amount / divineRate;
+      price.currency = "divine";
+    }
+
+    return price;
   }
 
   getCachedEstimates() {
@@ -198,6 +226,27 @@ class PriceEstimator {
     return mean;
   }
 
+  sumPrice(prices: Price[]) {
+    if (!prices.length) {
+      return { amount: 0, currency: "exalted" } as Price;
+    }
+
+    const currencies = Poe2Trade.toUniqueItems(prices.map((p) => p.currency));
+
+    if (currencies.length > 1) {
+      throw new Error("Multiple currencies found");
+    }
+
+    const currency = prices[0].currency;
+    const amount = this.sum(prices.map((p) => p.amount));
+
+    return { amount, currency } as Price;
+  }
+
+  sum(values: number[]) {
+    return values.reduce((a, b) => a + b, 0);
+  }
+
   mean(values: number[]) {
     return values.reduce((a, b) => a + b, 0) / values.length;
   }
@@ -271,7 +320,7 @@ class PriceEstimator {
   }
 
   parseItemMods(item: Poe2Item) {
-    const explicits = item.item.explicitMods.map((mod) => {
+    const explicits = item.item.explicitMods?.map((mod) => {
       return this.extractMod(mod);
     });
     const implicits = item.item.implicitMods?.map((mod) => {

@@ -10,7 +10,7 @@ import { wait } from "../utils/wait";
 export class Poe2TradeClient {
   port = 7555;
   baseUrl = `http://localhost:${this.port}`;
-  tradeUrl = "pathofexile.com/api/trade2";
+  tradeUrl = "www.pathofexile.com/api/trade2";
   apiUrl = `${this.baseUrl}/proxy/${this.tradeUrl}`;
 
   async getAccountItems(account: string, price = 1, currency = "exalted") {
