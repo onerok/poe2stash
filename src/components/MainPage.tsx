@@ -250,13 +250,13 @@ const MainPage: React.FC = () => {
             Filter by Stash Tab:
           </label>
           <select
+            className="border p-2"
             id="stash-select"
             value={selectedStash}
             onChange={(e) => filterByStash(e.target.value)}
-            className="border p-2"
           >
             {stashTabs.map((stash) => (
-              <option key={stash} value={stash}>
+              <option key={stash} value={stash} className="bg-gray-600">
                 {stash}
               </option>
             ))}

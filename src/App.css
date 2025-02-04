@@ -44,3 +44,8 @@
 :root {
   background-color: oklch(0.258 0.033 256.848) !important;
 }
+
+select option {
+  background: oklch(0.258 0.033 256.848) !important;
+  color: #fff;
+}
