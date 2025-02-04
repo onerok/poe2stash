@@ -66,8 +66,8 @@ class PriceEstimator {
       });
       await wait(1000)
 
-      const sampledItems = this.sampleRange(topMatch.result, 10);
-      const topPrices = await this.getPricesForItemIds(sampledItems);
+
+      const topPrices = await this.getPricesForItemIds(topMatch.result);
       await wait(5000);
 
       allPrices.push(...topPrices);

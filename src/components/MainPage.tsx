@@ -208,7 +208,6 @@ const MainPage: React.FC = () => {
     const getCachedItems = async (name: string) => {
       const accountItems = await Poe2Trade.getAllCachedAccountItems(name);
       setItems(accountItems);
-      updateStashTabs(accountItems);
     };
 
     const savedAccountName = localStorage.getItem("accountName");
@@ -221,6 +220,10 @@ const MainPage: React.FC = () => {
 
     setPriceEstimates(PriceChecker.getCachedEstimates());
   }, [accountName]);
+
+  useEffect(() =>{
+    updateStashTabs(items);
+  }, [items])
 
   useEffect(() => {
     return () => {
