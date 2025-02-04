@@ -33,6 +33,7 @@ const MainPage: React.FC = () => {
       const accountItems = await Poe2Trade.getAllAccountItems(name);
       const items = await Poe2Trade.fetchAllItems(name, accountItems);
       setItems(items);
+      updateStashTabs(items);
     } catch (error) {
       console.error("Error fetching items:", error);
       setErrorMessage(
@@ -82,12 +83,20 @@ const MainPage: React.FC = () => {
               const newItems = await Poe2Trade.fetchAllItems(
                 accountName,
                 toFetch,
+                true,
               );
 
-
               if (newItems.length > 0) {
+                // items that we don't already have in items, or
+                // items that have previously factored into profit calculation and are now getting updated
+
+                const netNewItems = newItems.filter(
+                  (i) =>
+                    liveSearchItems.map((item) => item.id).includes(i.id) ||
+                    !items.map((item) => item.id).includes(i.id),
+                );
                 setLiveSearchItems((prevItems) => [
-                  ...newItems,
+                  ...netNewItems,
                   ...prevItems.filter((i) => !toFetch.includes(i.id)),
                 ]);
 
@@ -137,6 +146,26 @@ const MainPage: React.FC = () => {
     const price = await PriceChecker.estimateItemPrice(item);
     setPriceEstimates(PriceChecker.getCachedEstimates());
     console.log(price);
+  };
+
+  const onRefreshClick = async (item: Poe2Item) => {
+    await Poe2Trade.fetchAllItems(accountName, [item.id], true);
+    const accountItems = await Poe2Trade.getAllCachedAccountItems(accountName);
+    setItems(accountItems);
+  };
+
+  const onRefreshAllClick = async () => {
+    for (let i = 0; i < filteredItems.length; i += 10) {
+      const batch = filteredItems.slice(i, i + 10);
+      await Poe2Trade.fetchAllItems(
+        accountName,
+        batch.map((item) => item.id),
+        true,
+      );
+      const accountItems =
+        await Poe2Trade.getAllCachedAccountItems(accountName);
+      setItems(accountItems);
+    }
   };
 
   const onPriceCheckAll = async () => {
@@ -240,6 +269,13 @@ const MainPage: React.FC = () => {
             className="border p-2"
           />
           <button
+            onClick={onRefreshAllClick}
+            className="bg-green-500 text-white p-2 rounded disabled:bg-gray-400"
+          >
+            Refresh All
+          </button>
+
+          <button
             onClick={onPriceCheckAll}
             className="bg-green-500 text-white p-2 rounded disabled:bg-gray-400"
           >
@@ -277,6 +313,7 @@ const MainPage: React.FC = () => {
           key={item.id}
           item={item}
           onPriceClick={onPriceClick}
+          onRefreshClick={onRefreshClick}
           priceSuggestion={priceEstimates[item.id]?.price}
         />
       ))}

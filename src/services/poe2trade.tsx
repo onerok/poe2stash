@@ -314,14 +314,14 @@ class Poe2TradeService {
     Cache.setJson(cacheKey, items);
   }
 
-  async fetchAllItems(account: string, items: string[]) {
+  async fetchAllItems(account: string, items: string[], refresh = false) {
     const allItems: Poe2Item[] = [];
     const itemsToFetch: string[] = [];
 
     // Check cache first
     for (const itemId of items) {
       const cachedItem = this.getCachedAccountItemDetails(account, itemId);
-      if (cachedItem) {
+      if (cachedItem && !refresh) {
         allItems.push(cachedItem);
       } else {
         itemsToFetch.push(itemId);

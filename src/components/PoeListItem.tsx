@@ -2,7 +2,6 @@ import { Poe2Item } from "../services/types";
 import { useState } from "react";
 import { PriceChecker } from "../services/PriceEstimator";
 
-
 const ItemNameWithRarity: React.FC<{ item: Poe2Item }> = ({ item }) => {
   const getRarityColor = (rarity: string = "magic") => {
     switch (rarity.toLowerCase()) {
@@ -32,6 +31,7 @@ export function PoeListItem(props: {
   item: Poe2Item;
   priceSuggestion?: { amount: number; currency: string };
   onPriceClick?: (item: Poe2Item) => void;
+  onRefreshClick?: (item: Poe2Item) => void;
 }) {
   const { item } = props;
   const [searchId, setSearchId] = useState<string | null>(null);
@@ -79,7 +79,8 @@ export function PoeListItem(props: {
               {item.listing.price.amount} {item.listing.price.currency}
               {props.priceSuggestion && (
                 <p className="font-semibold text-orange-600">
-                  estimate: ~{Math.round(props.priceSuggestion.amount)} {props.priceSuggestion.currency}
+                  estimate: ~{Math.round(props.priceSuggestion.amount)}{" "}
+                  {props.priceSuggestion.currency}
                 </p>
               )}
             </div>
@@ -139,6 +140,13 @@ export function PoeListItem(props: {
         </p>
       </div>
       <div className="flex flex-col sm:flex-col flex-shrink-0 mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto gap-4">
+        <button
+          onClick={() => props.onRefreshClick?.(item)}
+          className={buttonStyle}
+        >
+          Refresh
+        </button>
+
         <button
           onClick={() => props.onPriceClick?.(item)}
           className={buttonStyle}

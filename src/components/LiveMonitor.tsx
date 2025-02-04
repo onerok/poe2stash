@@ -99,7 +99,7 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({
   useEffect(() => {
     calculateTotalValue(items);
     calculateTotalSuggestedValue(items, priceSuggestions);
-  }, [items, priceSuggestions]);
+  }, [items, priceSuggestions, elapsedTime]);
 
   useEffect(() => {
     const calculateCurrencyPerHour = () => {
@@ -144,7 +144,7 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({
           <div>
             <p className="text-gray-400">Total listing value:</p>
             <p className="text-xl font-semibold text-white">
-              {totalListingValue.amount} {totalListingValue.currency}
+              {totalListingValue.amount.toFixed(2)} {totalListingValue.currency}
             </p>
           </div>
         )}
@@ -153,7 +153,8 @@ const LiveMonitor: React.FC<LiveMonitorProps> = ({
           <div>
             <p className="text-gray-400">Total suggested value:</p>
             <p className="text-xl font-semibold text-white">
-              {totalSuggestedValue.amount} {totalSuggestedValue.currency}
+              {totalSuggestedValue.amount.toFixed(2)}{" "}
+              {totalSuggestedValue.currency}
             </p>
           </div>
         )}
