@@ -2,10 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Poe2Trade } from "../services/poe2trade";
 import { PriceChecker, Estimate } from "../services/PriceEstimator";
 import { Poe2Item } from "../services/types";
+import { SyncAccount } from "../jobs/SyncAccount";
+import { Job } from "../jobs/Job";
+import { Jobs } from "../services/JobQueue";
 import { PoeListItem } from "./PoeListItem";
 import { wait } from "../utils/wait";
 import { WebSocketClient } from "../services/WebSocketClient";
 import LiveMonitor from "./LiveMonitor";
+import JobQueue from "./JobQueue";
 
 const MainPage: React.FC = () => {
   const [accountName, setAccountName] = useState("");
@@ -21,6 +25,7 @@ const MainPage: React.FC = () => {
   >({});
   const wsRef = useRef<WebSocketClient | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<Job<any>[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,15 +35,40 @@ const MainPage: React.FC = () => {
 
   const getItems = async (name: string) => {
     try {
-      const accountItems = await Poe2Trade.getAllAccountItems(name);
-      const items = await Poe2Trade.fetchAllItems(name, accountItems);
-      setItems(items);
-      updateStashTabs(items);
-    } catch (error) {
+      setErrorMessage("");
+
+      const sync = new SyncAccount(name);
+
+      sync.onStep = async (progress) => {
+        console.log("Sync step", progress);
+        const items = await Poe2Trade.fetchAllItems(name, progress.data);
+        setItems(items);
+        updateStashTabs(items);
+      };
+
+      sync.onDone = async (progress) => {
+        console.log("Sync done", progress);
+        await wait(10000);
+        setJobs(Jobs.getRunningJobs());
+      };
+
+      sync.onFail = async () => {
+        await wait(10000);
+        setJobs(Jobs.getRunningJobs());
+      };
+
+      const task = Jobs.start(sync).catch();
+      setJobs(Jobs.getRunningJobs());
+      await task;
+    } catch (error: any) {
       console.error("Error fetching items:", error);
-      setErrorMessage(
-        "Failed to fetch items. Please check your account name and try again.",
-      );
+      if ("message" in error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(
+          "Failed to fetch items. Please check your account name and try again.",
+        );
+      }
     }
   };
 
@@ -221,9 +251,9 @@ const MainPage: React.FC = () => {
     setPriceEstimates(PriceChecker.getCachedEstimates());
   }, [accountName]);
 
-  useEffect(() =>{
+  useEffect(() => {
     updateStashTabs(items);
-  }, [items])
+  }, [items]);
 
   useEffect(() => {
     return () => {
@@ -295,6 +325,8 @@ const MainPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {jobs.length > 0 && <JobQueue jobs={jobs} />}
 
       {isLiveMonitoring && (
         <LiveMonitor

@@ -14,99 +14,6 @@ class Poe2TradeService {
     return this.client.getAccountItems(account, price, currency);
   }
 
-  async getAllAccountItems(account: string) {
-    let price = 1;
-    let currency = "exalted";
-    let allItems: string[] = [];
-    let done = false;
-    let count = 0;
-
-    let allCachedItems = this.getCachedAccountItems(account);
-    let totalNeeded = 0;
-
-    while (!done) {
-      count++;
-
-      if (count > 8) {
-        console.log("Too many iterations");
-        break;
-      }
-
-      const response = await this.getAccountItems(account, price, currency);
-
-      if (price === 1) {
-        totalNeeded = response.total;
-      }
-
-      console.log(
-        "Trade site says we need to fetch",
-        totalNeeded,
-        "items. We have",
-        allCachedItems.length,
-      );
-
-      if (count === 1) {
-        if (totalNeeded === allCachedItems.length) {
-          // on the first iteration we can detect we've already got everything
-          console.log("No new items found");
-          return allCachedItems;
-        }
-
-        console.log("clearning account item cache");
-        this.setCachedAccountItems(account, []);
-      }
-
-      if (!response.result.length) {
-        done = true;
-        break;
-      }
-
-      this.upsertCachedAccountItems(account, response.result);
-      this.pruneAccountItemsLessThan(account, price, currency, allItems);
-      allCachedItems = this.getCachedAccountItems(account);
-
-      const [lastItem] = await this.fetchAllItems(account, [
-        response.result[response.result.length - 1],
-      ]);
-
-      const lastItemPrice = lastItem?.listing.price.amount || price;
-      const lastItemPriceCurrency =
-        lastItem?.listing.price.currency || currency;
-
-      if (lastItemPriceCurrency !== currency) {
-        currency = lastItemPriceCurrency;
-
-        // when switching from exalts to divines, the price amount field will be smaller
-        if (lastItemPrice < price) {
-          price = lastItemPrice;
-        }
-      } else if (lastItemPrice == price) {
-        // if no price is present on the last guy, this should hit
-        const itemLevelFetch = await this.getAllAccountItemsByItemLevel(
-          account,
-          price,
-          currency,
-        );
-        allItems.push(...itemLevelFetch);
-        console.log({ lastItemPrice, price }, "incrementing price");
-        price++;
-      } else {
-        console.log({ lastItemPrice }, "jumping price");
-        price = lastItemPrice;
-      }
-
-      currency = lastItemPriceCurrency;
-
-      allItems.push(...response.result);
-      allItems = this.toUniqueItems(allItems);
-
-      console.log("Seen items:", allItems.length);
-      await wait(10000);
-    }
-
-    this.setCachedAccountItems(account, allItems);
-    return allItems;
-  }
 
   async getAllAccountItemsByItemLevel(
     account: string,
@@ -242,7 +149,7 @@ class Poe2TradeService {
     this.setCachedAccountItems(account, items);
   }
 
-  private setCachedAccountItems(account: string, items: string[]) {
+  setCachedAccountItems(account: string, items: string[]) {
     const cacheKey = `poe2trade_account_${account}`;
     const uniqueItems = [...new Set(items)];
     Cache.setJson(cacheKey, uniqueItems);
@@ -281,7 +188,7 @@ class Poe2TradeService {
     return this.client.fetchItems(items);
   }
 
-  private getCachedAccountItemDetails(
+  getCachedAccountItemDetails(
     account: string,
     itemId: string,
   ): Poe2Item {
@@ -289,24 +196,24 @@ class Poe2TradeService {
     return cachedItems[itemId];
   }
 
-  private getAccountItemDetailsCacheKey(account: string): string {
+  getAccountItemDetailsCacheKey(account: string): string {
     return `poe2trade_account_${account}_items`;
   }
 
-  private getAccountItemDetailsCache(account: string): {
+  getAccountItemDetailsCache(account: string): {
     [key: string]: Poe2Item;
   } {
     const cacheKey = this.getAccountItemDetailsCacheKey(account);
     return Cache.getJson(cacheKey) || {};
   }
 
-  private upsertAccountItemDetails(account: string, item: Poe2Item) {
+  upsertAccountItemDetails(account: string, item: Poe2Item) {
     const cachedItems = this.getAccountItemDetailsCache(account);
     cachedItems[item.id] = item;
     this.setAccountItemDetails(account, cachedItems);
   }
 
-  private setAccountItemDetails(
+  setAccountItemDetails(
     account: string,
     items: { [key: string]: Poe2Item },
   ) {
