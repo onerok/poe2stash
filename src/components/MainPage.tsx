@@ -3,6 +3,8 @@ import { Poe2Trade } from "../services/poe2trade";
 import { PriceChecker, Estimate } from "../services/PriceEstimator";
 import { Poe2Item } from "../services/types";
 import { SyncAccount } from "../jobs/SyncAccount";
+import { RefreshAllItems } from "../jobs/RefreshAllItems";
+import { PriceCheckAllItems } from "../jobs/PriceCheckAllItems";
 import { Job } from "../jobs/Job";
 import { Jobs } from "../services/JobQueue";
 import { PoeListItem } from "./PoeListItem";
@@ -27,6 +29,38 @@ const MainPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Job<any>[]>([]);
 
+  const handleJob = async (job: Job<any>) => {
+    try {
+      setErrorMessage("");
+
+      const origDone = job.onDone;
+      const origFail = job.onFail;
+
+      job.onDone = async (progress) => {
+        await origDone(progress);
+        await wait(10000);
+        setJobs(Jobs.getRunningJobs());
+      };
+
+      job.onFail = async (progress) => {
+        await origFail(progress);
+        await wait(10000);
+        setJobs(Jobs.getRunningJobs());
+      };
+
+      const task = Jobs.start(job);
+      setJobs(Jobs.getRunningJobs());
+      await task;
+    } catch (error: any) {
+      console.error("Error price checking items:", error);
+      if (typeof error === "object" && "message" in error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(job.name + " failed. Sorry about that");
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem("accountName", accountName);
@@ -34,42 +68,19 @@ const MainPage: React.FC = () => {
   };
 
   const getItems = async (name: string) => {
-    try {
-      setErrorMessage("");
+    setErrorMessage("");
 
-      const sync = new SyncAccount(name);
+    const sync = new SyncAccount(name);
 
-      sync.onStep = async (progress) => {
-        console.log("Sync step", progress);
-        const items = await Poe2Trade.fetchAllItems(name, progress.data);
-        setItems(items);
-        updateStashTabs(items);
-      };
+    sync.onStep = async (progress) => {
+      console.log("Sync step", progress);
+      const items = await Poe2Trade.fetchAllItems(name, progress.data);
+      setItems(items);
+      updateStashTabs(items);
+    };
 
-      sync.onDone = async (progress) => {
-        console.log("Sync done", progress);
-        await wait(10000);
-        setJobs(Jobs.getRunningJobs());
-      };
-
-      sync.onFail = async () => {
-        await wait(10000);
-        setJobs(Jobs.getRunningJobs());
-      };
-
-      const task = Jobs.start(sync).catch();
-      setJobs(Jobs.getRunningJobs());
-      await task;
-    } catch (error: any) {
-      console.error("Error fetching items:", error);
-      if ("message" in error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage(
-          "Failed to fetch items. Please check your account name and try again.",
-        );
-      }
-    }
+    await handleJob(sync);
+    setJobs(Jobs.getRunningJobs());
   };
 
   const liveMonitor = async () => {
@@ -185,33 +196,26 @@ const MainPage: React.FC = () => {
   };
 
   const onRefreshAllClick = async () => {
-    for (let i = 0; i < filteredItems.length; i += 10) {
-      const batch = filteredItems.slice(i, i + 10);
-      await Poe2Trade.fetchAllItems(
-        accountName,
-        batch.map((item) => item.id),
-        true,
-      );
-      const accountItems =
-        await Poe2Trade.getAllCachedAccountItems(accountName);
-      setItems(accountItems);
-    }
+    const refresh = new RefreshAllItems(accountName, filteredItems);
+
+    refresh.onStep = async (progress) => {
+      setItems(progress.data);
+    };
+
+    await handleJob(refresh);
   };
 
   const onPriceCheckAll = async () => {
     setIsPriceChecking(true);
-    for (const item of filteredItems) {
-      if (priceEstimates[item.id]) {
-        continue;
-      }
+    const priceCheck = new PriceCheckAllItems(filteredItems, true);
 
-      try {
-        await onPriceClick(item);
-        await wait(5000);
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    priceCheck.onStep = async () => {
+      setPriceEstimates(PriceChecker.getCachedEstimates());
+    };
+
+    await handleJob(priceCheck);
+    setPriceEstimates(PriceChecker.getCachedEstimates());
+
     setIsPriceChecking(false);
   };
 

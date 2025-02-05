@@ -64,8 +64,7 @@ class PriceEstimator {
           ...Poe2Trade.range(s!.value1),
         })),
       });
-      await wait(1000)
-
+      await wait(1000);
 
       const topPrices = await this.getPricesForItemIds(topMatch.result);
       await wait(5000);
@@ -75,11 +74,11 @@ class PriceEstimator {
 
     if (item.item.rarity.toLowerCase() === "normal") {
       // no explicits for normals, so we'll need to lookup seperately
-      console.log("fetching normal item", allPrices)
+      console.log("fetching normal item", allPrices);
       const normal = await Poe2Trade.getItemByAttributes({
         rarity: item.item.rarity,
         baseType: item.item.baseType,
-        status: "online"
+        status: "online",
       });
       await wait(1000);
       const sampledItems = this.sampleRange(normal.result, 10);
@@ -87,7 +86,10 @@ class PriceEstimator {
       allPrices.push(...normalPrices);
     }
 
-    await this.fetchManyExchangeRates(currency, allPrices.map(p => p.currency))
+    await this.fetchManyExchangeRates(
+      currency,
+      allPrices.map((p) => p.currency),
+    );
     const estimate = this.priceEstimate(allPrices);
 
     estimate.price = await this.upscalePrice(estimate.price);
@@ -96,7 +98,7 @@ class PriceEstimator {
     console.log({ allPrices, estimate, item });
 
     this.cachePriceEstimate(item.item.id, estimate);
-    return estimate;
+    return estimate as Estimate;
     // perform some searches based off the explicits to see if we can find comparable items
     // but we also want to learn about which mods are valuable for rares
     // we can detect this by the general pattern of item_type, item_rarity, (mod1, mod2, ...modN) => price floor
@@ -113,7 +115,6 @@ class PriceEstimator {
         .concat(items.result.map((i) => i.listing.price.currency)),
     );
 
-
     await this.fetchManyExchangeRates(currency, currencies);
 
     const prices = this.toEquivalentPrices(
@@ -124,15 +125,15 @@ class PriceEstimator {
       })),
     );
 
-    return prices
+    return prices;
   }
 
   sampleRange(items: string[], want: number) {
-    if(items.length <= want) {
+    if (items.length <= want) {
       return items;
     }
-    let skip = Math.floor(items.length / want);
-    return new Array(want).fill(0).map((_v, i) => items[i * skip])
+    const skip = Math.floor(items.length / want);
+    return new Array(want).fill(0).map((_v, i) => items[i * skip]);
   }
 
   async upscalePrice(price: Price) {
