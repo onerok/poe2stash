@@ -244,16 +244,19 @@ const MainPage: React.FC = () => {
       setItems(accountItems);
     };
 
+    setPriceEstimates(PriceChecker.getCachedEstimates());
+
+    if (accountName) {
+      getCachedItems(accountName);
+    }
+  }, [accountName]);
+
+  useEffect(() => {
     const savedAccountName = localStorage.getItem("accountName");
     if (savedAccountName) {
       setAccountName(savedAccountName);
-      if (accountName) {
-        getCachedItems(accountName);
-      }
     }
-
-    setPriceEstimates(PriceChecker.getCachedEstimates());
-  }, [accountName]);
+  }, []);
 
   useEffect(() => {
     updateStashTabs(items);
