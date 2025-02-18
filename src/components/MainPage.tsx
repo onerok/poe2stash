@@ -87,6 +87,7 @@ const MainPage: React.FC = () => {
     if (isLiveMonitoring) {
       setIsLiveMonitoring(false);
       wsRef.current?.close();
+      setLiveSearchItems([])
       return;
     }
 
@@ -111,6 +112,11 @@ const MainPage: React.FC = () => {
         const data = JSON.parse(text);
         if (data.new && data.new.length > 0) {
           for (const newItemId of data.new) {
+            // if we turn off live monitoring, skip price checking the items
+            if(!isLiveMonitoring) {
+              return;
+            }
+
             newItemsBatch.push(newItemId);
 
             await wait(5000);
