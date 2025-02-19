@@ -215,7 +215,8 @@ const MainPage: React.FC = () => {
     setIsPriceChecking(true);
     const priceCheck = new PriceCheckAllItems(filteredItems, true);
 
-    priceCheck.onStep = async () => {
+    priceCheck.onStep = async (progress) => {
+      console.log("price check", progress)
       setPriceEstimates(PriceChecker.getCachedEstimates());
     };
 

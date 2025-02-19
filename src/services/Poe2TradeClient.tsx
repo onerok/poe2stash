@@ -177,7 +177,7 @@ export class Poe2TradeClient {
             filters: {
               ilvl: {
                 ...(minItemLevel && { min: minItemLevel }),
-                ...(maxItemLevel && { max: minItemLevel }),
+                ...(maxItemLevel && { max: maxItemLevel }),
               },
             },
           },

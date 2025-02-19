@@ -16,7 +16,7 @@ export class PriceCheckAllItems extends Job<Estimate> {
 
   async *_task() {
     const cached = PriceChecker.getCachedEstimates();
-    for (let i = 0; i < this.filteredItems.length; i += 10) {
+    for (let i = 0; i < this.filteredItems.length; i++) {
       const item = this.filteredItems[i];
 
       if (cached[item.id] && this.skipAlreadyChecked) {
@@ -25,14 +25,14 @@ export class PriceCheckAllItems extends Job<Estimate> {
           current: i + 1,
           data: cached[item.id],
         };
+      } else {
+        const price = await PriceChecker.estimateItemPrice(item);
+        yield {
+          total: this.filteredItems.length,
+          current: i + 1,
+          data: price,
+        };
       }
-
-      const price = await PriceChecker.estimateItemPrice(item);
-      yield {
-        total: this.filteredItems.length,
-        current: i + 1,
-        data: price,
-      };
     }
   }
 }

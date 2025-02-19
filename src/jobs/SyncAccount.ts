@@ -4,7 +4,7 @@ import { Poe2Trade } from "../services/poe2trade";
 
 export class SyncAccount extends Job<string[]> {
   constructor(private account: string) {
-    super("account-sync", "Sync Account", "Syncs the account with the server");
+    super("account-sync", "Sync Account", "Scrapes the trade website for all your items. This might take a few minutes.");
   }
 
   async *_task() {

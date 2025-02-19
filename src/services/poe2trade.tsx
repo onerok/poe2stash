@@ -57,12 +57,8 @@ class Poe2TradeService {
       ]);
       const lastItem = fetches[fetches.length - 1];
 
-      if (!iLevelRange.result.length) {
-        break;
-      }
-
-      if (iLevelRange.total > 100 && minItemLevel && maxItemLevel) {
-        // we are cooked, too many even after setting min and max
+      if (!iLevelRange.result.length || minItemLevel && lastItem.item.ilvl < minItemLevel) {
+        // we are done
         break;
       }
 
@@ -77,10 +73,20 @@ class Poe2TradeService {
         maxItemLevel = undefined;
       }
 
+      if (minItemLevel && (!lastItem.item.ilvl || minItemLevel == lastItem.item.ilvl)) {
+        // we have found a page where the last item is still our current level
+        // or there's no item level on it at all for some reason
+        minItemLevel = minItemLevel + 1;
+      }
+
       if (!minItemLevel || lastItem.item.ilvl > minItemLevel) {
         // we have a new minimum as the largest item level we've seen
         minItemLevel = lastItem.item.ilvl;
         maxItemLevel = undefined;
+      }
+
+      if (maxItemLevel && maxItemLevel < minItemLevel) {
+        maxItemLevel = minItemLevel;
       }
 
       allItems.push(...iLevelRange.result);

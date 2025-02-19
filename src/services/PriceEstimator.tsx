@@ -66,7 +66,9 @@ class PriceEstimator {
       });
       await wait(1000);
 
-      const topPrices = await this.getPricesForItemIds(topMatch.result);
+      // ignore your own listing
+      const filtered = topMatch.result.filter(i => i != item.id)
+      const topPrices = await this.getPricesForItemIds(filtered);
       await wait(5000);
 
       allPrices.push(...topPrices);
@@ -81,7 +83,8 @@ class PriceEstimator {
         status: "online",
       });
       await wait(1000);
-      const sampledItems = this.sampleRange(normal.result, 10);
+      const filtered = normal.result.filter(i => i != item.id);
+      const sampledItems = this.sampleRange(filtered, 10);
       const normalPrices = await this.getPricesForItemIds(sampledItems);
       allPrices.push(...normalPrices);
     }
@@ -254,9 +257,13 @@ class PriceEstimator {
       )
       .flat() as Price[];
 
-    console.log({ iWant, iHave, amounts });
+    const prices = amounts.map(a => a.amount).slice(0, 10);
+    const weights = Object.values(swaps.result)
+      .map((s) => s.listing.offers.map((o) => o.item.amount))
+      .flat().slice(0, 10);
 
-    const mean = this.mean(amounts.map((a) => a.amount).slice(0, 50));
+    console.log({ iWant, iHave, amounts, weights });
+    const mean = this.weightedAvg(prices, weights);
 
     await this.cacheExchangeRates(iWant, iHave, mean);
     return mean;
@@ -285,6 +292,10 @@ class PriceEstimator {
 
   mean(values: number[]) {
     return values.reduce((a, b) => a + b, 0) / values.length;
+  }
+
+  weightedAvg(values: number[], weights: number[]) {
+    return this.sum(values.map((v, i) => v * weights[i])) / this.sum(weights);
   }
 
   variance(values: number[]) {
