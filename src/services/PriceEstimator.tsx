@@ -30,6 +30,7 @@ class PriceEstimator {
         id: s!.hash,
         ...Poe2Trade.range(s!.value1),
       })),
+      status: "online"
     });
 
     return topMatch;
@@ -44,7 +45,7 @@ class PriceEstimator {
     // loop until we have 10 prices or we have no more mods to search
     for (
       let i = parsedMods?.explicits?.length || 0;
-      i >= 3 && allPrices.length < 10;
+      i >= 1 && allPrices.length < 10;
       i--
     ) {
       const topMods = await this.getHighTierMods(item, i);
@@ -57,6 +58,7 @@ class PriceEstimator {
         .filter((p) => p);
 
       const topMatch = await Poe2Trade.getItemByAttributes({
+        status: "online",
         rarity: item.item.rarity,
         baseType: item.item.baseType,
         explicit: topStats.map((s) => ({
@@ -339,7 +341,10 @@ class PriceEstimator {
     let value1 = match ? Number(match[1]) : undefined;
     let value2 = match && match[2] ? Number(match[2]) : undefined;
 
-    if (statEntry.text !== output) {
+    const inverted = (statEntry.text.includes("increased") && output.includes("reduced")) ||
+      statEntry.text.includes("reduced") && output.includes("increased");
+
+    if (statEntry.text !== output && inverted) {
       // we had to invert to find the stat entry
       if (value1) value1 = -value1;
       if (value2) value2 = -value2;
@@ -360,7 +365,9 @@ class PriceEstimator {
         (entry) =>
           entry.text === mod ||
           entry.text === mod.replace("increased", "reduced") ||
-          entry.text === mod.replace("reduced", "increased"),
+          entry.text === mod.replace("reduced", "increased") ||
+          entry.text === mod.replace("in your Maps", "in Area") ||
+          entry.text === mod.replace("in your Maps", "in this Area"),
       ),
     ).flat();
     return stats.length > 0 ? stats[0] : null;
