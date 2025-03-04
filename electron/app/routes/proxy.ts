@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import { app, net, session, BrowserWindow } from "electron";
 import WebSocket from "ws";
+import { RateLimits } from "../services/RateLimitParser";
 
 const hosts = [{ url: "www.pathofexile.com" }];
 
-export const proxy = (req: Request, res: Response) => {
+export const proxy = async (req: Request, res: Response) => {
   const proxyTo = req.url.split("/")[1];
   console.log({ proxyTo });
   const host = hosts.find((host) => proxyTo.includes(host.url));
@@ -42,6 +43,7 @@ export const proxy = (req: Request, res: Response) => {
       referrerPolicy: "no-referrer-when-downgrade",
     };
     console.log(params);
+    await RateLimits.waitForLimit();
     const proxyReq = net.request(params);
 
     const proxyReqStream = proxyReq as unknown as NodeJS.WritableStream;
@@ -49,6 +51,8 @@ export const proxy = (req: Request, res: Response) => {
     proxyReq.on("response", (proxyRes) => {
       const resHeaders = { ...proxyRes.headers };
       delete resHeaders["content-encoding"];
+
+      RateLimits.parse(proxyRes.headers);
       res.writeHead(proxyRes.statusCode, proxyRes.statusMessage, resHeaders);
 
       const proxyResStream = proxyRes as unknown as NodeJS.ReadableStream;

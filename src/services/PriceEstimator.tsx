@@ -66,12 +66,12 @@ class PriceEstimator {
           ...Poe2Trade.range(s!.value1),
         })),
       });
-      await wait(1000);
+      //await wait(1000);
 
       // ignore your own listing
       const filtered = topMatch.result.filter(i => i != item.id)
       const topPrices = await this.getPricesForItemIds(filtered);
-      await wait(5000);
+      //await wait(5000);
 
       allPrices.push(...topPrices);
     }
@@ -84,7 +84,7 @@ class PriceEstimator {
         baseType: item.item.baseType,
         status: "online",
       });
-      await wait(1000);
+      //await wait(1000);
       const filtered = normal.result.filter(i => i != item.id);
       const sampledItems = this.sampleRange(filtered, 10);
       const normalPrices = await this.getPricesForItemIds(sampledItems);
