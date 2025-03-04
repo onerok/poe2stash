@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { Poe2Trade } from "../services/poe2trade";
 import { PriceChecker, Estimate } from "../services/PriceEstimator";
 import { Poe2Item } from "../services/types";
@@ -140,7 +141,7 @@ const MainPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Welcome to Poe2Stash</h1>
+      <h1 className="text-2xl font-bold mb-4 mt-8">Welcome to Poe2Stash</h1>
       <form onSubmit={handleSubmit} className="mb-4">
         <input
           type="text"

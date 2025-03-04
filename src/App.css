@@ -43,6 +43,7 @@
 
 :root {
   background-color: oklch(0.258 0.033 256.848) !important;
+  overflow: hidden;
 }
 
 select option {
