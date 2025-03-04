@@ -6,12 +6,10 @@ import { SyncAccount } from "../jobs/SyncAccount";
 import { RefreshAllItems } from "../jobs/RefreshAllItems";
 import { PriceCheckAllItems } from "../jobs/PriceCheckAllItems";
 import { Job } from "../jobs/Job";
-import { Jobs } from "../services/JobQueue";
 import { PoeListItem } from "./PoeListItem";
-import { wait } from "../utils/wait";
-import { WebSocketClient } from "../services/WebSocketClient";
+import { LiveMonitorButton } from "./LiveMonitorButton";
 import LiveMonitor from "./LiveMonitor";
-import JobQueue from "./JobQueue";
+import { JobQueue, handleJob } from "./JobQueue";
 
 const MainPage: React.FC = () => {
   const [accountName, setAccountName] = useState("");
@@ -25,41 +23,8 @@ const MainPage: React.FC = () => {
   const [priceEstimates, setPriceEstimates] = useState<
     Record<string, Estimate>
   >({});
-  const wsRef = useRef<WebSocketClient | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Job<any>[]>([]);
-
-  const handleJob = async (job: Job<any>) => {
-    try {
-      setErrorMessage("");
-
-      const origDone = job.onDone;
-      const origFail = job.onFail;
-
-      job.onDone = async (progress) => {
-        await origDone(progress);
-        await wait(10000);
-        setJobs(Jobs.getRunningJobs());
-      };
-
-      job.onFail = async (progress) => {
-        await origFail(progress);
-        await wait(10000);
-        setJobs(Jobs.getRunningJobs());
-      };
-
-      const task = Jobs.start(job);
-      setJobs(Jobs.getRunningJobs());
-      await task;
-    } catch (error: any) {
-      console.error("Error price checking items:", error);
-      if (typeof error === "object" && "message" in error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage(job.name + " failed. Sorry about that");
-      }
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,103 +44,7 @@ const MainPage: React.FC = () => {
       updateStashTabs(items);
     };
 
-    await handleJob(sync);
-    setJobs(Jobs.getRunningJobs());
-  };
-
-  const liveMonitor = async () => {
-    if (isLiveMonitoring) {
-      setIsLiveMonitoring(false);
-      wsRef.current?.close();
-      setLiveSearchItems([])
-      return;
-    }
-
-    setIsLiveMonitoring(true);
-    const accountSearch = await Poe2Trade.getAccountItems(accountName);
-    setupWebSocket(accountSearch.id);
-  };
-
-  const setupWebSocket = (id: string) => {
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
-
-    const ws = new WebSocketClient(`/live/poe2/Standard/${id}`);
-
-    let newItemsBatch = [] as string[];
-    ws.onMessage = async (event: MessageEvent) => {
-      if (event.data instanceof Blob) {
-        const text = await event.data.text();
-        console.log(text);
-
-        const data = JSON.parse(text);
-        if (data.new && data.new.length > 0) {
-          for (const newItemId of data.new) {
-            // if we turn off live monitoring, skip price checking the items
-            if(!isLiveMonitoring) {
-              return;
-            }
-
-            newItemsBatch.push(newItemId);
-
-            await wait(5000);
-
-            // try to fetch in batches after 5 seconds of events, incase many items come in at once
-            if (newItemsBatch.length > 0) {
-              const toFetch = Poe2Trade.toUniqueItems([...newItemsBatch]);
-              Poe2Trade.upsertCachedAccountItems(accountName, toFetch);
-
-              newItemsBatch = [];
-              const newItems = await Poe2Trade.fetchAllItems(
-                accountName,
-                toFetch,
-                true,
-              );
-
-              if (newItems.length > 0) {
-                // items that we don't already have in items, or
-                // items that have previously factored into profit calculation and are now getting updated
-
-                const netNewItems = newItems.filter(
-                  (i) =>
-                    liveSearchItems.map((item) => item.id).includes(i.id) ||
-                    !items.map((item) => item.id).includes(i.id),
-                );
-                setLiveSearchItems((prevItems) => [
-                  ...netNewItems,
-                  ...prevItems.filter((i) => !toFetch.includes(i.id)),
-                ]);
-
-                setItems((prevItems) => [
-                  ...newItems,
-                  ...prevItems.filter((i) => !toFetch.includes(i.id)),
-                ]);
-              }
-
-              for (const item of newItems) {
-                try {
-                  await onPriceClick(item);
-                  await wait(5000);
-                } catch (e) {
-                  console.error(e);
-                }
-              }
-            }
-          }
-        }
-      }
-    };
-
-    ws.onClose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    ws.onError = (error: Event) => {
-      console.error("WebSocket error:", error);
-    };
-
-    wsRef.current = ws;
+    await handleJob(sync, setJobs, setErrorMessage);
   };
 
   const updateStashTabs = (items: Poe2Item[]) => {
@@ -208,7 +77,7 @@ const MainPage: React.FC = () => {
       setItems(progress.data);
     };
 
-    await handleJob(refresh);
+    await handleJob(refresh, setJobs, setErrorMessage);
   };
 
   const onPriceCheckAll = async () => {
@@ -216,11 +85,11 @@ const MainPage: React.FC = () => {
     const priceCheck = new PriceCheckAllItems(filteredItems, true);
 
     priceCheck.onStep = async (progress) => {
-      console.log("price check", progress)
+      console.log("price check", progress);
       setPriceEstimates(PriceChecker.getCachedEstimates());
     };
 
-    await handleJob(priceCheck);
+    await handleJob(priceCheck, setJobs, setErrorMessage);
     setPriceEstimates(PriceChecker.getCachedEstimates());
 
     setIsPriceChecking(false);
@@ -268,12 +137,6 @@ const MainPage: React.FC = () => {
   useEffect(() => {
     updateStashTabs(items);
   }, [items]);
-
-  useEffect(() => {
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-    };
-  }, []);
 
   return (
     <div className="container mx-auto p-4">
@@ -328,19 +191,29 @@ const MainPage: React.FC = () => {
           >
             {isPriceChecking ? "Checking Prices..." : "Price Check All"}
           </button>
-          <button
-            onClick={liveMonitor}
-            className="bg-blue-500 text-white p-2 rounded"
-          >
-            Live Monitor
-          </button>
+          <LiveMonitorButton
+            accountName={accountName}
+            items={items}
+            liveSearchItems={liveSearchItems}
+            isLiveMonitoring={isLiveMonitoring}
+            setIsLiveMonitoring={setIsLiveMonitoring}
+            setLiveSearchItems={setLiveSearchItems}
+            setItems={setItems}
+            onPriceCheck={onPriceClick}
+          />
           <div className="flex-grow text-right">
             {filteredItems.length} items found
           </div>
         </div>
       )}
 
-      {jobs.length > 0 && <JobQueue jobs={jobs} />}
+      {jobs.length > 0 && (
+        <JobQueue
+          jobs={jobs}
+          setJobs={setJobs}
+          setErrorMessage={setErrorMessage}
+        />
+      )}
 
       {isLiveMonitoring && (
         <LiveMonitor

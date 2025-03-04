@@ -1,14 +1,58 @@
-import React from 'react';
-import { Job } from '../jobs/Job';
-import { Jobs } from '../services/JobQueue';
+import React from "react";
+import { Job } from "../jobs/Job";
+import { Jobs } from "../services/JobQueue";
+import { wait } from "../utils/wait";
 
 interface JobQueueProps {
   jobs: Job<any>[];
+  setJobs: (jobs: Job<T>[]) => void;
+  setErrorMessage: (message: string) => void;
 }
 
-const JobQueue: React.FC<JobQueueProps> = ({ jobs }) => {
+export async function handleJob<T>(
+  job: Job<T>,
+  setJobs: (jobs: Job<T>[]) => void,
+  setErrorMessage: (message: string) => void,
+) {
+  try {
+    setErrorMessage("");
+    const origDone = job.onDone;
+    const origFail = job.onFail;
+
+    job.onDone = async (progress) => {
+      await origDone(progress);
+      await wait(10000);
+      setJobs(Jobs.getRunningJobs());
+    };
+
+    job.onFail = async (progress) => {
+      await origFail(progress);
+      await wait(10000);
+      setJobs(Jobs.getRunningJobs());
+    };
+
+    const task = Jobs.start(job);
+    setJobs(Jobs.getRunningJobs());
+    await task;
+  } catch (error: any) {
+    console.error("Error price checking items:", error);
+    if (typeof error === "object" && "message" in error) {
+      setErrorMessage(error.message);
+    } else {
+      setErrorMessage(job.name + " failed. Sorry about that");
+    }
+  }
+}
+
+export const JobQueue: React.FC<JobQueueProps> = ({
+  jobs,
+  setJobs,
+  setErrorMessage,
+}) => {
   const handleCancel = (jobId: string) => {
     Jobs.cancelJob(jobId);
+    setErrorMessage("");
+    setJobs(Jobs.getRunningJobs());
   };
 
   return (
@@ -34,7 +78,8 @@ const JobQueue: React.FC<JobQueueProps> = ({ jobs }) => {
                 <span className="text-gray-400">Status: {job.status}</span>
                 {job.currentProgress && (
                   <span className="text-gray-400">
-                    Progress: {job.currentProgress.current} / {job.currentProgress.total}
+                    Progress: {job.currentProgress.current} /{" "}
+                    {job.currentProgress.total}
                   </span>
                 )}
               </div>
@@ -42,7 +87,9 @@ const JobQueue: React.FC<JobQueueProps> = ({ jobs }) => {
                 <div className="mt-2 bg-gray-600 rounded-full h-2.5">
                   <div
                     className="bg-blue-500 h-2.5 rounded-full"
-                    style={{ width: `${(job.currentProgress.current / job.currentProgress.total) * 100}%` }}
+                    style={{
+                      width: `${(job.currentProgress.current / job.currentProgress.total) * 100}%`,
+                    }}
                   ></div>
                 </div>
               )}
@@ -53,5 +100,3 @@ const JobQueue: React.FC<JobQueueProps> = ({ jobs }) => {
     </div>
   );
 };
-
-export default JobQueue;
