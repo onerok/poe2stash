@@ -1,6 +1,7 @@
 import { Job } from "./Job";
 import { wait } from "../utils/wait";
 import { Poe2Trade } from "../services/poe2trade";
+import { PriceChecker } from "../services/PriceEstimator";
 
 export class SyncAccount extends Job<string[]> {
   constructor(private account: string) {
@@ -31,18 +32,9 @@ export class SyncAccount extends Job<string[]> {
         currency,
       );
 
-      if (price === 1) {
-        totalNeeded = response.total;
-      }
-
-      console.log(
-        "Trade site says we need to fetch",
-        totalNeeded,
-        "items. We have",
-        allCachedItems.length,
-      );
-
       if (count === 1) {
+        totalNeeded = response.total;
+
         if (totalNeeded === allCachedItems.length) {
           // on the first iteration we can detect we've already got everything
           console.log("No new items found");
@@ -51,7 +43,15 @@ export class SyncAccount extends Job<string[]> {
 
         console.log("clearning account item cache");
         Poe2Trade.setCachedAccountItems(this.account, []);
+        allCachedItems = [];
       }
+
+      console.log(
+        "Trade site says we need to fetch",
+        response.total,
+        "items. We have",
+        allCachedItems.length,
+      );
 
       if (!response.result.length) {
         done = true;
@@ -71,18 +71,18 @@ export class SyncAccount extends Job<string[]> {
         response.result[response.result.length - 1],
       ]);
 
-      const lastItemPrice = lastItem?.listing.price.amount || price;
-      const lastItemPriceCurrency =
+      let lastItemPrice = lastItem?.listing.price.amount || price;
+      let lastItemPriceCurrency =
         lastItem?.listing.price.currency || currency;
 
       if (lastItemPriceCurrency !== currency) {
-        currency = lastItemPriceCurrency;
-
-        // when switching from exalts to divines, the price amount field will be smaller
-        if (lastItemPrice < price) {
-          price = lastItemPrice;
-        }
-      } else if (lastItemPrice == price) {
+        const exchangeRate = await PriceChecker.exchangeRate(currency, lastItemPriceCurrency)
+        // convert everything to exalted price
+        lastItemPrice = exchangeRate * lastItemPrice;
+        lastItemPriceCurrency = currency;
+      } 
+      
+      if (lastItemPrice == price) {
         // if no price is present on the last guy, this should hit
         const itemLevelFetch = await Poe2Trade.getAllAccountItemsByItemLevel(
           this.account,
@@ -96,8 +96,6 @@ export class SyncAccount extends Job<string[]> {
         console.log({ lastItemPrice }, "jumping price");
         price = lastItemPrice;
       }
-
-      currency = lastItemPriceCurrency;
 
       allItems.push(...response.result);
       allItems = Poe2Trade.toUniqueItems(allItems);

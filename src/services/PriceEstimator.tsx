@@ -331,7 +331,8 @@ class PriceEstimator {
     // To capture the numbers that were replaced:
     const match = mod.match(numberCapture);
 
-    const statEntry = this.getStatEntryForMod(output);
+    // Look for generalized match, or exact match
+    const statEntry = this.getStatEntryForMod(output, withoutBrackets);
 
     if (!statEntry) {
       console.log(`No stat entry found for mod: ${mod}, ${output}`);
@@ -359,7 +360,7 @@ class PriceEstimator {
     };
   }
 
-  getStatEntryForMod(mod: string) {
+  getStatEntryForMod(mod: string, original?: string) {
     const stats = Stats.map((statGroup) =>
       statGroup.entries.filter(
         (entry) =>
@@ -367,7 +368,9 @@ class PriceEstimator {
           entry.text === mod.replace("increased", "reduced") ||
           entry.text === mod.replace("reduced", "increased") ||
           entry.text === mod.replace("in your Maps", "in Area") ||
-          entry.text === mod.replace("in your Maps", "in this Area"),
+          entry.text === mod.replace("in your Maps", "in this Area") ||
+          original && entry.text === original,
+
       ),
     ).flat();
     return stats.length > 0 ? stats[0] : null;
