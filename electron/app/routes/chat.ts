@@ -2,11 +2,25 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 
-const router = Router();
-const configPath = path.resolve(__dirname, "config.json");
+export const chatRouter = Router();
+const configPath = path.resolve("config.json");
+
+function loadConfig() {
+  return fs.existsSync(configPath)
+    ? JSON.parse(fs.readFileSync(configPath).toString())
+    : {};
+}
+
+function updateConfig(newConfig: Record<string, any>) {
+  const config = loadConfig();
+  fs.writeFileSync(
+    configPath,
+    JSON.stringify({ ...config, ...newConfig }, null, 2),
+  );
+}
 
 // Route to save file path
-router.post("/chat", (req, res) => {
+chatRouter.post("/", (req, res) => {
   const { filePath } = req.body;
 
   if (!filePath || !fs.existsSync(filePath)) {
@@ -14,16 +28,16 @@ router.post("/chat", (req, res) => {
     return;
   }
 
-  const config = fs.existsSync(configPath) ? require(configPath) : {};
+  const config = loadConfig();
   config.chatPath = filePath;
 
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  updateConfig(config);
   res.send("Chat path saved");
 });
 
 // Route to parse chat offers
-router.get("/chat/offers", (_req, res) => {
-  const config = require(configPath);
+chatRouter.get("/offers", (_req, res) => {
+  const config = loadConfig();
 
   if (!config.chatPath || !fs.existsSync(config.chatPath)) {
     res.status(400).send("Chat file path not defined or does not exist");
@@ -36,24 +50,37 @@ router.get("/chat/offers", (_req, res) => {
 });
 
 // Function to parse messages
-function parseMessages(content: string) {
+export function parseMessages(content: string) {
   const offerRegex =
-    /@From .+: Hi, I would like to buy your (.+) listed for ([\d.]+ .+) in .+? (?:stash tab "(.+?)"; position: left (\d+), top (\d+))/;
+    /(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \d+ [a-f0-9]+ \[INFO Client \d+\] @From (.+?): Hi, I would like to buy your (.+) listed for ([\d.]+ .+) in .*(?:stash tab "(.+?)"; position: left (\d+), top (\d+))/g;
   const messages = [];
   const lines = content.split("\n");
 
   for (const line of lines) {
-    const match = line.match(offerRegex);
+    const match = offerRegex.exec(line);
+    console.log({ match });
     if (match) {
-      messages.push({
+      const [
+        _,
+        timestamp,
+        characterName,
+        itemName,
+        price,
+        stashTab,
+        left,
+        top,
+      ] = match;
+      messages.unshift({
         message: line,
+        timestamp,
+        characterName,
         item: {
-          name: match[1],
-          price: match[2],
-          stashTab: match[3],
+          name: itemName,
+          price,
+          stashTab,
           position: {
-            left: parseInt(match[4], 10),
-            top: parseInt(match[5], 10),
+            left: parseInt(left, 10),
+            top: parseInt(top, 10),
           },
         },
       });
@@ -62,6 +89,3 @@ function parseMessages(content: string) {
 
   return messages;
 }
-
-// Export the router
-export default router;

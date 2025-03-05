@@ -31,7 +31,7 @@ export const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 export const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 
-nativeTheme.themeSource = 'dark';
+nativeTheme.themeSource = "dark";
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, "public")
@@ -46,7 +46,6 @@ function createWindow() {
       preload: path.join(__dirname, "preload.mjs"),
     },
   });
-
 
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
@@ -85,8 +84,11 @@ app.on("activate", () => {
 
 app.whenReady().then(createWindow);
 
+expressApp.use(express.json());
 expressApp.use(cors());
 expressApp.use("/proxy", routes.proxy);
+expressApp.use("/chat", routes.chatRouter);
+
 const server = http.createServer(expressApp);
 const wss = new WebSocketServer({ server });
 

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { WebSocketClient } from "../services/WebSocketClient";
+import { Poe2WebsocketClient } from "../services/Poe2WebsocketClient";
 import { Poe2Item } from "../services/types";
 import { Poe2Trade } from "../services/poe2trade";
 import { wait } from "../utils/wait";
@@ -25,14 +25,14 @@ export const LiveMonitorButton: React.FC<LiveMonitorButtonProps> = ({
   setItems,
   onPriceCheck,
 }: LiveMonitorButtonProps) => {
-  const wsRef = useRef<WebSocketClient | null>(null);
+  const wsRef = useRef<Poe2WebsocketClient | null>(null);
 
   const setupWebSocket = (id: string) => {
     if (wsRef.current) {
       wsRef.current.close();
     }
 
-    const ws = new WebSocketClient(`/live/poe2/Standard/${id}`);
+    const ws = new Poe2WebsocketClient(`/live/poe2/Standard/${id}`);
 
     let newItemsBatch = [] as string[];
     ws.onMessage = async (event: MessageEvent) => {

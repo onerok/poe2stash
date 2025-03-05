@@ -1,4 +1,4 @@
-export class WebSocketClient {
+export class Poe2WebsocketClient {
   private ws: WebSocket;
 
   port = 7555;
