@@ -4,6 +4,9 @@ import path from "path";
 
 export const chatRouter = Router();
 const configPath = path.resolve("config.json");
+let config = loadConfig();
+let chatFileContent = config.chatPath ? fs.readFileSync(config.chatPath, "utf-8") : "";
+let messages = parseMessages(chatFileContent);
 
 function loadConfig() {
   return fs.existsSync(configPath)
@@ -28,24 +31,25 @@ chatRouter.post("/", (req, res) => {
     return;
   }
 
-  const config = loadConfig();
+  config = loadConfig();
   config.chatPath = filePath;
 
   updateConfig(config);
+
+  chatFileContent = config.chatPath ? fs.readFileSync(config.chatPath, "utf-8") : "";
+  messages = parseMessages(chatFileContent);
+  
   res.send("Chat path saved");
 });
 
+
 // Route to parse chat offers
 chatRouter.get("/offers", (_req, res) => {
-  const config = loadConfig();
-
   if (!config.chatPath || !fs.existsSync(config.chatPath)) {
     res.status(400).send("Chat file path not defined or does not exist");
     return;
   }
 
-  const chatFileContent = fs.readFileSync(config.chatPath, "utf-8");
-  const messages = parseMessages(chatFileContent);
   res.json(messages);
 });
 
@@ -58,7 +62,6 @@ export function parseMessages(content: string) {
 
   for (const line of lines) {
     const match = offerRegex.exec(line);
-    console.log({ match });
     if (match) {
       const [
         _,

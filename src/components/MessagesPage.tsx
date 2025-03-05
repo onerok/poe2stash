@@ -74,13 +74,17 @@ const MessagesPage: React.FC = () => {
     const item = offer.item;
     const foundItem = accountItems.find(
       (i) =>
-        i.item.name === item.name &&
-        i.listing.stash.x == item.position.left &&
-        i.listing.stash.y == item.position.top,
+        item.name.startsWith(i.item.name || i.item.typeLine) &&
+        item.position.left == i.listing.stash.x &&
+        item.position.top == i.listing.stash.y
+    ) || accountItems.find(
+      (i) =>
+        item.name.startsWith(i.item.name || i.item.typeLine)
     );
 
     if (!foundItem) return null;
 
+    console.log(foundItem, offer)
     return { found: foundItem, offer };
   };
 
