@@ -84,9 +84,9 @@ app.on("activate", () => {
 
 app.whenReady().then(createWindow);
 
-expressApp.use(express.json());
 expressApp.use(cors());
 expressApp.use("/proxy", routes.proxy);
+expressApp.use(express.json());
 expressApp.use("/chat", routes.chatRouter);
 
 const server = http.createServer(expressApp);
