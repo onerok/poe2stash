@@ -52,6 +52,10 @@ export const proxy = async (req: Request, res: Response) => {
       const resHeaders = { ...proxyRes.headers };
       delete resHeaders["content-encoding"];
 
+      if(proxyRes.statusCode === 401) {
+        openAuthWindow();
+      }
+
       RateLimits.parse(proxyRes.headers);
       res.writeHead(proxyRes.statusCode, proxyRes.statusMessage, resHeaders);
 
@@ -80,6 +84,17 @@ async function getCookiesHeader(host: string): Promise<string> {
     console.error("Failed to retrieve cookies:", error);
     return "";
   }
+}
+
+export const openAuthWindow = () => {
+  const authwin = new BrowserWindow({
+    width: 800,
+    height: 600,
+  });
+  authwin.loadURL(
+    "https://www.pathofexile.com/trade2/search/poe2/Standard/",
+  );
+  return authwin;
 }
 
 export const wsProxy = async (clientSocket: WebSocket, req: Request) => {
