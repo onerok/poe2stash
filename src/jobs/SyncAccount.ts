@@ -1,5 +1,4 @@
 import { Job } from "./Job";
-import { wait } from "../utils/wait";
 import { Poe2Trade } from "../services/poe2trade";
 import { PriceChecker } from "../services/PriceEstimator";
 
@@ -113,7 +112,6 @@ export class SyncAccount extends Job<string[]> {
       };
 
       console.log("Seen items:", allItems.length);
-      //await wait(10000);
     }
 
     Poe2Trade.setCachedAccountItems(this.account, allItems);

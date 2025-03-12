@@ -97,8 +97,6 @@ class Poe2TradeService {
 
       allItems.push(...iLevelRange.result);
       allItems = this.toUniqueItems(allItems);
-
-      //await wait(10000);
     }
 
     return allItems;
@@ -246,7 +244,6 @@ class Poe2TradeService {
     while (items.length) {
       console.log(`Fetching ${items.length} items`);
       const response = await this.fetchItems(items);
-      //await wait(10000);
 
       // Store fetched items in cache
       response.result.forEach((item) =>
