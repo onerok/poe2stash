@@ -1,6 +1,5 @@
 import { Poe2Item, Poe2ItemSearch } from "./types";
 import { Cache } from "../services/Cache";
-import { wait } from "../utils/wait";
 import { Poe2TradeClient } from "./Poe2TradeClient";
 
 class Poe2TradeService {
@@ -13,7 +12,6 @@ class Poe2TradeService {
   async getAccountItems(account: string, price = 1, currency = "exalted") {
     return this.client.getAccountItems(account, price, currency);
   }
-
 
   async getAllAccountItemsByItemLevel(
     account: string,
@@ -52,12 +50,17 @@ class Poe2TradeService {
         maxItemLevel,
       );
 
-      const fetches = await this.fetchAllItems(account, [
-        initial.result[initial.result.length - 1],
-      ]);
-      const lastItem = fetches[fetches.length - 1];
+      const fetches = await this.fetchAllItems(
+        account,
+        initial.result.slice(-5),
+      );
+      // Take the highest item level from the last 5 items fetched
+      const lastItem = fetches.sort((a, b) => b.item.ilvl - a.item.ilvl)[0];
 
-      if (!iLevelRange.result.length || minItemLevel && lastItem.item.ilvl < minItemLevel) {
+      if (
+        !iLevelRange.result.length ||
+        (minItemLevel && lastItem.item.ilvl < minItemLevel)
+      ) {
         // we are done
         break;
       }
@@ -73,7 +76,10 @@ class Poe2TradeService {
         maxItemLevel = undefined;
       }
 
-      if (minItemLevel && (!lastItem.item.ilvl || minItemLevel == lastItem.item.ilvl)) {
+      if (
+        minItemLevel &&
+        (!lastItem.item.ilvl || minItemLevel == lastItem.item.ilvl)
+      ) {
         // we have found a page where the last item is still our current level
         // or there's no item level on it at all for some reason
         minItemLevel = minItemLevel + 1;
@@ -194,10 +200,7 @@ class Poe2TradeService {
     return this.client.fetchItems(items);
   }
 
-  getCachedAccountItemDetails(
-    account: string,
-    itemId: string,
-  ): Poe2Item {
+  getCachedAccountItemDetails(account: string, itemId: string): Poe2Item {
     const cachedItems = this.getAccountItemDetailsCache(account);
     return cachedItems[itemId];
   }
@@ -219,10 +222,7 @@ class Poe2TradeService {
     this.setAccountItemDetails(account, cachedItems);
   }
 
-  setAccountItemDetails(
-    account: string,
-    items: { [key: string]: Poe2Item },
-  ) {
+  setAccountItemDetails(account: string, items: { [key: string]: Poe2Item }) {
     const cacheKey = this.getAccountItemDetailsCacheKey(account);
     Cache.setJson(cacheKey, items);
   }

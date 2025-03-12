@@ -2,7 +2,6 @@ import { Price, Poe2Item } from "./types";
 import { Poe2Trade } from "./poe2trade";
 import { Cache } from "./Cache";
 import { Stats } from "../data/stats";
-import { wait } from "../utils/wait";
 
 export type Stat = (typeof Stats)[0]["entries"][0];
 export type Explicit = Poe2Item["item"]["extended"]["mods"]["explicit"][0];
@@ -30,7 +29,7 @@ class PriceEstimator {
         id: s!.hash,
         ...Poe2Trade.range(s!.value1),
       })),
-      status: "online"
+      status: "online",
     });
 
     return topMatch;
@@ -69,7 +68,7 @@ class PriceEstimator {
       //await wait(1000);
 
       // ignore your own listing
-      const filtered = topMatch.result.filter(i => i != item.id)
+      const filtered = topMatch.result.filter((i) => i != item.id);
       const topPrices = await this.getPricesForItemIds(filtered);
       //await wait(5000);
 
@@ -85,7 +84,7 @@ class PriceEstimator {
         status: "online",
       });
       //await wait(1000);
-      const filtered = normal.result.filter(i => i != item.id);
+      const filtered = normal.result.filter((i) => i != item.id);
       const sampledItems = this.sampleRange(filtered, 10);
       const normalPrices = await this.getPricesForItemIds(sampledItems);
       allPrices.push(...normalPrices);
@@ -237,6 +236,13 @@ class PriceEstimator {
     }
   }
 
+  async avgExchangeRate(iWant: string, iHave: string) {
+    const rate1 = await this.exchangeRate(iWant, iHave);
+    const rate2 = await this.exchangeRate(iHave, iWant);
+
+    return (rate1 + rate2) / 2;
+  }
+
   async exchangeRate(iWant: string, iHave: string) {
     const cached = this.getCachedExchangeRates(iWant, iHave);
 
@@ -259,10 +265,11 @@ class PriceEstimator {
       )
       .flat() as Price[];
 
-    const prices = amounts.map(a => a.amount).slice(0, 10);
+    const prices = amounts.map((a) => a.amount).slice(0, 10);
     const weights = Object.values(swaps.result)
       .map((s) => s.listing.offers.map((o) => o.item.amount))
-      .flat().slice(0, 10);
+      .flat()
+      .slice(0, 10);
 
     console.log({ iWant, iHave, amounts, weights });
     const mean = this.weightedAvg(prices, weights);
@@ -342,8 +349,9 @@ class PriceEstimator {
     let value1 = match ? Number(match[1]) : undefined;
     let value2 = match && match[2] ? Number(match[2]) : undefined;
 
-    const inverted = (statEntry.text.includes("increased") && output.includes("reduced")) ||
-      statEntry.text.includes("reduced") && output.includes("increased");
+    const inverted =
+      (statEntry.text.includes("increased") && output.includes("reduced")) ||
+      (statEntry.text.includes("reduced") && output.includes("increased"));
 
     if (statEntry.text !== output && inverted) {
       // we had to invert to find the stat entry
@@ -369,8 +377,7 @@ class PriceEstimator {
           entry.text === mod.replace("reduced", "increased") ||
           entry.text === mod.replace("in your Maps", "in Area") ||
           entry.text === mod.replace("in your Maps", "in this Area") ||
-          original && entry.text === original,
-
+          (original && entry.text === original),
       ),
     ).flat();
     return stats.length > 0 ? stats[0] : null;

@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Home, Package, Settings, MessageSquare } from "lucide-react";
+import { X, Home, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface SideMenuProps {
@@ -37,14 +37,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
           <span>Home</span>
         </Link>
         <Link
-          to="/inventory"
-          className="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-          onClick={handleLinkClick}
-        >
-          <Package className="h-5 w-5 mr-3" />
-          <span>Inventory</span>
-        </Link>
-        <Link
           to="/messages"
           className="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
           onClick={handleLinkClick}
@@ -52,14 +44,16 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
           <MessageSquare className="h-5 w-5 mr-3" />
           <span>Messages</span>
         </Link>
-        <Link
-          to="/settings"
-          className="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-          onClick={handleLinkClick}
-        >
-          <Settings className="h-5 w-5 mr-3" />
-          <span>Settings</span>
-        </Link>
+        {/*
+         *<Link
+         *  to="/settings"
+         *  className="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+         *  onClick={handleLinkClick}
+         *>
+         *  <Settings className="h-5 w-5 mr-3" />
+         *  <span>Settings</span>
+         *</Link>
+         */}
       </nav>
       <div className="p-4 bg-gray-700 text-gray-400 text-sm">
         © 2023 Poe2Stash

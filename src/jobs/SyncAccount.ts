@@ -5,7 +5,11 @@ import { PriceChecker } from "../services/PriceEstimator";
 
 export class SyncAccount extends Job<string[]> {
   constructor(private account: string) {
-    super("account-sync", "Sync Account", "Scrapes the trade website for all your items. This might take a few minutes.");
+    super(
+      "account-sync",
+      "Sync Account",
+      "Scrapes the trade website for all your items. This might take a few minutes.",
+    );
   }
 
   async *_task() {
@@ -72,16 +76,18 @@ export class SyncAccount extends Job<string[]> {
       ]);
 
       let lastItemPrice = lastItem?.listing.price.amount || price;
-      let lastItemPriceCurrency =
-        lastItem?.listing.price.currency || currency;
+      let lastItemPriceCurrency = lastItem?.listing.price.currency || currency;
 
       if (lastItemPriceCurrency !== currency) {
-        const exchangeRate = await PriceChecker.exchangeRate(currency, lastItemPriceCurrency)
+        const exchangeRate = await PriceChecker.avgExchangeRate(
+          currency,
+          lastItemPriceCurrency,
+        );
         // convert everything to exalted price
         lastItemPrice = exchangeRate * lastItemPrice;
         lastItemPriceCurrency = currency;
-      } 
-      
+      }
+
       if (lastItemPrice == price) {
         // if no price is present on the last guy, this should hit
         const itemLevelFetch = await Poe2Trade.getAllAccountItemsByItemLevel(
@@ -94,7 +100,7 @@ export class SyncAccount extends Job<string[]> {
         price++;
       } else {
         console.log({ lastItemPrice }, "jumping price");
-        price = lastItemPrice;
+        price = lastItemPrice > price ? lastItemPrice : price + 1;
       }
 
       allItems.push(...response.result);

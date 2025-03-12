@@ -3,6 +3,7 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "Poe2Stash",
   "asar": true,
+  "icon": "assets/icon",
   "productName": "Poe2Stash",
   "directories": {
     "output": "release/${version}"

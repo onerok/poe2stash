@@ -60,6 +60,7 @@ function createWindow() {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
     // win.loadFile('dist/index.html')
+    console.log("RENDERER_DIST", { RENDERER_DIST });
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }

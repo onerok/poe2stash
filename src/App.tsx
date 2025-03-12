@@ -1,18 +1,13 @@
 import React, { useState } from "react";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import MessagesPage from "./components/MessagesPage";
 import { SideMenu } from "./components/SideMenu";
+import { AppContextProvider } from "./contexts/AppContext";
 import "./App.css";
 
 const AppContent: React.FC = () => {
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
-  const location = useLocation();
 
   return (
     <div className="relative flex h-screen">
@@ -51,9 +46,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AppContextProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AppContextProvider>
   );
 };
 

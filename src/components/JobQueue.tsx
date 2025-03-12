@@ -5,7 +5,7 @@ import { wait } from "../utils/wait";
 
 interface JobQueueProps {
   jobs: Job<any>[];
-  setJobs: (jobs: Job<T>[]) => void;
+  setJobs: (jobs: Job<any>[]) => void;
   setErrorMessage: (message: string) => void;
 }
 
