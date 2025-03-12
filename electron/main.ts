@@ -94,7 +94,15 @@ const server = http.createServer(expressApp);
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (ws, request) => {
-  routes.wsProxy(ws, request as Request);
+  console.log(request.url);
+  if (request.url?.startsWith("/chat")) {
+    routes.wsChat(ws, request as Request);
+    return;
+  }
+  if (request?.url?.startsWith("/proxy")) {
+    routes.wsProxy(ws, request as Request);
+    return;
+  }
 });
 
 server.listen(PORT, () => {

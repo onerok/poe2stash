@@ -1,19 +1,5 @@
 import axios from "axios";
-
-export interface ChatOffer {
-  message: string;
-  timestamp: string;
-  characterName: string;
-  item: {
-    name: string;
-    price: string;
-    stashTab: string;
-    position: {
-      left: number;
-      top: number;
-    };
-  };
-}
+import { ChatOffer } from "./types";
 
 export class ChatService {
   private baseUrl = "http://localhost:7555"; // Assuming the same port as other services

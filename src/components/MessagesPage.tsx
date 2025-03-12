@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Poe2WebsocketClient } from "../services/Poe2WebsocketClient";
-import { chatService, ChatOffer } from "../services/ChatService";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { WebsocketClient } from "../services/WebsocketClient";
+import { chatService } from "../services/ChatService";
 import { PoeListItem } from "./PoeListItem";
 import { Poe2Trade } from "../services/poe2trade";
-import { Poe2Item } from "../services/types";
+import { Poe2Item, ChatOffer } from "../services/types";
 import { useAppContext } from "../contexts/AppContext";
 import { JobQueue } from "./JobQueue";
 
 const MessagesPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [offers, setOffers] = useState<ChatOffer[]>([]);
-  const [wsClient, setWsClient] = useState<Poe2WebsocketClient | null>(null);
   const [accountItems, setAccountItems] = useState<Poe2Item[]>([]);
   const [messageSearchTerm, setMessageSearchTerm] = useState("");
   const [activeOnly, setActiveOnly] = useState(true);
@@ -24,18 +23,42 @@ const MessagesPage: React.FC = () => {
     setErrorMessage,
   } = useAppContext();
 
-  useEffect(() => {
-    return () => {
-      if (wsClient) {
-        wsClient.close();
+  const wsRef = useRef<WebsocketClient | null>(null);
+
+  const setupWebSocket = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+
+    const ws = new WebsocketClient("/chat");
+    ws.onMessage = async (event) => {
+      console.log("Chat file changed:", event);
+
+      if (event) {
+        fetchOffers();
+        fetchAccountItems();
       }
     };
-  }, [wsClient]);
+    wsRef.current = ws;
+  };
 
   useEffect(() => {
+    setupWebSocket();
     fetchOffers();
     fetchAccountItems();
-  }, []);
+
+    return () => {
+      if (wsRef) {
+        wsRef.current?.close();
+      }
+    };
+  }, []); // Empty dependency array to run only on mount and unmount
+
+  useEffect(() => {
+    if (file) {
+      setupWebSocket();
+    }
+  }, [file]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,16 +69,10 @@ const MessagesPage: React.FC = () => {
     try {
       await chatService.setChatFilePath(file.path);
       await fetchOffers();
-
-      // Set up WebSocket connection
-      const ws = new Poe2WebsocketClient("/ws/chat");
-      ws.onMessage = (event: MessageEvent) => {
-        const newMessage = JSON.parse(event.data);
-        setOffers((prevOffers) => [...prevOffers, newMessage]);
-      };
-      setWsClient(ws);
+      setupWebSocket(); // Reconnect WebSocket after setting new chat file
     } catch (error) {
       console.error("Error:", error);
+      setErrorMessage("Error setting chat file: " + (error as Error).message);
     }
   };
 
@@ -64,6 +81,7 @@ const MessagesPage: React.FC = () => {
       const fetchedOffers = await chatService.getOffers();
       setOffers(fetchedOffers);
     } catch (error) {
+      setErrorMessage("Error fetching offers: " + (error as Error).message);
       console.error("Error fetching offers:", error);
     }
   };
@@ -73,6 +91,11 @@ const MessagesPage: React.FC = () => {
     const accountItems = accountName
       ? await Poe2Trade.getAllCachedAccountItems(accountName)
       : [];
+    if (accountItems.length === 0) {
+      setErrorMessage(
+        "No account items found. Please check your account name in the settings.",
+      );
+    }
     setAccountItems(accountItems);
   };
 
@@ -89,7 +112,6 @@ const MessagesPage: React.FC = () => {
         item.name.startsWith(i.item.name || i.item.typeLine),
       );
 
-    console.log(foundItem, offer);
     return { found: foundItem, offer };
   };
 
@@ -107,8 +129,6 @@ const MessagesPage: React.FC = () => {
         .includes(messageSearchTerm.toLowerCase()),
     );
   }, [messageSearchTerm, foundOffers]);
-
-  console.log(filteredOffers);
 
   const getMessageContent = (message: string) => {
     return message.split("@From")[1];
@@ -129,7 +149,10 @@ const MessagesPage: React.FC = () => {
           className="border p-2 mr-2 file:mr-4 file:py-2 file:px-4
           file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+        <button
+          type="submit"
+          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        >
           Load Messages
         </button>
       </form>
@@ -140,7 +163,7 @@ const MessagesPage: React.FC = () => {
           value={messageSearchTerm}
           onChange={handleMessageSearch}
           placeholder="Search messages..."
-          className="border p-2 flex-grow mr-2"
+          className="border p-2 flex-grow mr-2 rounded"
         />
         <div className="flex items-center">
           <label htmlFor="activeOnly" className="mr-2">
@@ -151,7 +174,7 @@ const MessagesPage: React.FC = () => {
             id="activeOnly"
             checked={activeOnly}
             onChange={() => setActiveOnly(!activeOnly)}
-            className="form-checkbox h-5 w-5 text-blue-600"
+            className="form-checkbox h-5 w-5 text-blue-600 rounded"
           />
         </div>
       </div>
@@ -166,9 +189,14 @@ const MessagesPage: React.FC = () => {
 
       <div className="space-y-4">
         {filteredOffers.map((o, index) => (
-          <div key={index} className="rounded-lg shadow-lg p-6 mb-6 bg-gray-750 transition-all duration-300 hover:shadow-xl">
-            <p className="mb-2 w-full text-left">
-              {o.offer.timestamp}
+          <div
+            key={index}
+            className="rounded-lg shadow-lg p-6 mb-6 bg-gray-750 transition-all duration-300 hover:shadow-xl"
+          >
+            <p className="mb-2 w-full text-left flex items-center">
+              <span className="text-sm text-gray-400 mr-2">
+                {new Date(o.offer.timestamp).toLocaleString()}
+              </span>
               {getMessageContent(o.offer.message)}
             </p>
             {o.found && (
@@ -180,7 +208,7 @@ const MessagesPage: React.FC = () => {
                 priceSuggestion={priceEstimates[o.found.id]?.price}
               />
             )}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-start mt-2">
               <div className="text-sm text-gray-600 text-left">
                 <p>Account: {o.offer.characterName}</p>
                 <p>Item: {o.offer.item.name}</p>
