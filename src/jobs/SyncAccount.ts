@@ -100,7 +100,7 @@ export class SyncAccount extends Job<string[]> {
         price++;
       } else {
         console.log({ lastItemPrice }, "jumping price");
-        price = lastItemPrice > price ? lastItemPrice : price + 1;
+        price = lastItemPrice > price ? lastItemPrice : price * 1.2;
       }
 
       allItems.push(...response.result);

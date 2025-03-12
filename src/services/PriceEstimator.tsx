@@ -238,7 +238,7 @@ class PriceEstimator {
 
   async avgExchangeRate(iWant: string, iHave: string) {
     const rate1 = await this.exchangeRate(iWant, iHave);
-    const rate2 = await this.exchangeRate(iHave, iWant);
+    const rate2 = 1 / (await this.exchangeRate(iHave, iWant));
 
     return (rate1 + rate2) / 2;
   }
