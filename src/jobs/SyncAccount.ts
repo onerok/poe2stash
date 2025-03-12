@@ -113,7 +113,7 @@ export class SyncAccount extends Job<string[]> {
       };
 
       console.log("Seen items:", allItems.length);
-      await wait(10000);
+      //await wait(10000);
     }
 
     Poe2Trade.setCachedAccountItems(this.account, allItems);
