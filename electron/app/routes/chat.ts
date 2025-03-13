@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import fs from "fs";
 import path from "path";
 
@@ -104,7 +104,7 @@ export function parseMessages(content: string) {
   return messages;
 }
 
-export function wsChat(ws: WebSocket) {
+export function wsChat(ws: WebSocket, _req: Request) {
   console.log("forwarding chat messages to client");
   wss = ws;
 }
