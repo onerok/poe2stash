@@ -1,11 +1,11 @@
-# POE2Stash
-Analyze your stash tabs in poe2. Price checks and live monitoring of dump tabs
-This project is in active development, and I intend to build out some more community oriented features in the future.
-
 <p align="center">
   <img src="assets/icon.png" alt="Path of Exile 2 Trade Assistant Icon" width="200">
 </p>
 
+
+# POE2Stash
+Analyze your stash tabs in poe2. Price checks and live monitoring of dump tabs
+This project is in active development, and I intend to build out some more community oriented features in the future.
 
 ## Releases
 You can download the latest release from the [releases page](https://github.com/micahriggan/poe2stash/releases).
