@@ -20,7 +20,7 @@
                 "GitHub.copilot-chat",
                 "GitHub.codespaces",
                 "ms-python.black-formatter",
-                "ms-python.vscode-pylance",
+                "ms-python.vscode-pylance"
             ]
         }
     }
