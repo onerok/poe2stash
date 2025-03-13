@@ -1,0 +1,27 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/python:0-3.11-bullseye",
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "lts"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:1": {
+            "version": "latest"
+        },
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "humao.rest-client",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "GitHub.codespaces",
+                "ms-python.black-formatter",
+                "ms-python.vscode-pylance",
+            ]
+        }
+    }
+}
