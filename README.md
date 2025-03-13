@@ -1,8 +1,16 @@
-# Path of Exile 2 Trade Assistant
+# POE2Stash
+Analyze your stash tabs in poe2. Price checks and live monitoring of dump tabs
+This project is in active development, and I intend to build out some more community oriented features in the future.
 
 <p align="center">
   <img src="assets/icon.png" alt="Path of Exile 2 Trade Assistant Icon" width="200">
 </p>
+
+
+## Releases
+You can download the latest release from the [releases page](https://github.com/micahriggan/poe2stash/releases).
+There should be a windows portable and a MacOS dmg available on each release
+
 
 ## Features
 
@@ -15,6 +23,8 @@ Easily sync your Path of Exile 2 account to fetch all your items.
 - Fetches items from the trade website
 - Automatically updates your local item database
 - Provides real-time progress updates during synchronization
+- Refresh individual items
+- Perform a full refresh of all items
 
 ### 2. Item Management
 
@@ -28,61 +38,40 @@ Efficiently manage and view your items with powerful filtering options.
 
 ### 3. Live Monitoring
 
-Stay up-to-date with new items and price changes in real-time.
+Stay up-to-date with new items as you dump them into your stash tabs.
 
 ![Live Monitoring](docs/new_drops_live_monitor_ss.PNG)
 
 - Receive instant notifications for new items
-- Monitor price changes for your items
-- Automatically update your item database with new information
+- Price check items as you add them to your stash
+- Track your currency listed per hour
 
 ### 4. Price Checking
 
-Get accurate price estimates for your items to maximize your profits.
+Get some-what accurate price estimates for your items.
 
 ![Price Checking](docs/price_check_ss.PNG)
 
 - Estimate prices for individual items
 - Batch price check multiple items
-- View price history and trends
 
-### 5. Refresh Functionality
+### 5. Chat Monitoring
 
-Keep your item database current with easy refresh options.
+Show item details of purchase offers if you have them in the item database
 
 ![Refresh Items](docs/chat_messages_load_items_ss.PNG)
 
-- Refresh individual items
-- Perform a full refresh of all items
-- Automatically update price estimates after refreshing
+- Search chat offers for patterns in sales
+- Price check items as you receive offers
 
-### 6. WebSocket Integration
 
-Enjoy seamless real-time updates and interactions.
 
-- Establish WebSocket connections for live data
-- Receive instant updates from the Path of Exile 2 servers
-- Ensure low-latency communication for a smooth user experience
-
-### 7. Proxy Support
-
-Access Path of Exile 2 trade API securely through a built-in proxy.
-
-- Handle API rate limits efficiently
-- Manage authentication and cookies automatically
-- Ensure compliance with Path of Exile 2's terms of service
-
-## Getting Started
+## Devs Getting Started
 
 1. Clone the repository
 2. Install dependencies with `npm install`
-3. Run the application with `npm start`
+3. Run the application with `npm run dev`
 4. Enter your Path of Exile 2 account name to begin syncing your items
 
 ## Contributing
-
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License.
