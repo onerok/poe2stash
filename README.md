@@ -10,7 +10,7 @@
 
 Easily sync your Path of Exile 2 account to fetch all your items.
 
-![Account Sync](docs/account_sync.png)
+![Account Sync](docs/main_page_ss.PNG)
 
 - Fetches items from the trade website
 - Automatically updates your local item database
@@ -20,7 +20,7 @@ Easily sync your Path of Exile 2 account to fetch all your items.
 
 Efficiently manage and view your items with powerful filtering options.
 
-![Item Management](docs/item_management.png)
+![Item Management](docs/search_items_ss.PNG)
 
 - Filter items by stash tab
 - Search items using keywords
@@ -30,7 +30,7 @@ Efficiently manage and view your items with powerful filtering options.
 
 Stay up-to-date with new items and price changes in real-time.
 
-![Live Monitoring](docs/live_monitoring.png)
+![Live Monitoring](docs/new_drops_live_monitor_ss.PNG)
 
 - Receive instant notifications for new items
 - Monitor price changes for your items
@@ -40,7 +40,7 @@ Stay up-to-date with new items and price changes in real-time.
 
 Get accurate price estimates for your items to maximize your profits.
 
-![Price Checking](docs/price_checking.png)
+![Price Checking](docs/price_check_ss.PNG)
 
 - Estimate prices for individual items
 - Batch price check multiple items
@@ -50,7 +50,7 @@ Get accurate price estimates for your items to maximize your profits.
 
 Keep your item database current with easy refresh options.
 
-![Refresh Items](docs/refresh_items.png)
+![Refresh Items](docs/chat_messages_load_items_ss.PNG)
 
 - Refresh individual items
 - Perform a full refresh of all items
