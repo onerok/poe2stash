@@ -1,30 +1,88 @@
-# React + TypeScript + Vite
+# Path of Exile 2 Trade Assistant
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<p align="center">
+  <img src="assets/icon.png" alt="Path of Exile 2 Trade Assistant Icon" width="200">
+</p>
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Account Synchronization
 
-## Expanding the ESLint configuration
+Easily sync your Path of Exile 2 account to fetch all your items.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+![Account Sync](docs/account_sync.png)
 
-- Configure the top-level `parserOptions` property like this:
+- Fetches items from the trade website
+- Automatically updates your local item database
+- Provides real-time progress updates during synchronization
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+### 2. Item Management
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+Efficiently manage and view your items with powerful filtering options.
+
+![Item Management](docs/item_management.png)
+
+- Filter items by stash tab
+- Search items using keywords
+- View detailed item information
+
+### 3. Live Monitoring
+
+Stay up-to-date with new items and price changes in real-time.
+
+![Live Monitoring](docs/live_monitoring.png)
+
+- Receive instant notifications for new items
+- Monitor price changes for your items
+- Automatically update your item database with new information
+
+### 4. Price Checking
+
+Get accurate price estimates for your items to maximize your profits.
+
+![Price Checking](docs/price_checking.png)
+
+- Estimate prices for individual items
+- Batch price check multiple items
+- View price history and trends
+
+### 5. Refresh Functionality
+
+Keep your item database current with easy refresh options.
+
+![Refresh Items](docs/refresh_items.png)
+
+- Refresh individual items
+- Perform a full refresh of all items
+- Automatically update price estimates after refreshing
+
+### 6. WebSocket Integration
+
+Enjoy seamless real-time updates and interactions.
+
+- Establish WebSocket connections for live data
+- Receive instant updates from the Path of Exile 2 servers
+- Ensure low-latency communication for a smooth user experience
+
+### 7. Proxy Support
+
+Access Path of Exile 2 trade API securely through a built-in proxy.
+
+- Handle API rate limits efficiently
+- Manage authentication and cookies automatically
+- Ensure compliance with Path of Exile 2's terms of service
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Run the application with `npm start`
+4. Enter your Path of Exile 2 account name to begin syncing your items
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.
