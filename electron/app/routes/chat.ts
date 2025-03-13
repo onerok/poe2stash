@@ -2,11 +2,21 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 
+import { WebSocket } from "ws";
+import chokidar from "chokidar";
+
 export const chatRouter = Router();
 const configPath = path.resolve("config.json");
 let config = loadConfig();
-let chatFileContent = config.chatPath ? fs.readFileSync(config.chatPath, "utf-8") : "";
+let chatFileContent = config.chatPath
+  ? fs.readFileSync(config.chatPath, "utf-8")
+  : "";
 let messages = parseMessages(chatFileContent);
+let wss: WebSocket;
+
+if (config && chatFileContent) {
+  setupChatFileWatcher();
+}
 
 function loadConfig() {
   return fs.existsSync(configPath)
@@ -36,12 +46,13 @@ chatRouter.post("/", (req, res) => {
 
   updateConfig(config);
 
-  chatFileContent = config.chatPath ? fs.readFileSync(config.chatPath, "utf-8") : "";
+  chatFileContent = config.chatPath
+    ? fs.readFileSync(config.chatPath, "utf-8")
+    : "";
   messages = parseMessages(chatFileContent);
-  
+
   res.send("Chat path saved");
 });
-
 
 // Route to parse chat offers
 chatRouter.get("/offers", (_req, res) => {
@@ -91,4 +102,39 @@ export function parseMessages(content: string) {
   }
 
   return messages;
+}
+
+export function wsChat(ws: WebSocket) {
+  console.log("forwarding chat messages to client");
+  wss = ws;
+}
+
+function setupChatFileWatcher() {
+  if (!config.chatPath) return;
+
+  const watcher = chokidar.watch(config.chatPath, {
+    persistent: true,
+    usePolling: true,
+    interval: 100,
+  });
+
+  watcher.on("change", (path) => {
+    console.log(`File ${path} has been changed`);
+    const newContent = fs.readFileSync(path, "utf-8");
+    const changes = newContent.slice(chatFileContent.length);
+
+    console.log({ changes });
+    chatFileContent = newContent;
+
+    const newMessages = parseMessages(changes);
+
+    messages = newMessages.concat(messages);
+    console.log({ newMessages });
+
+    if (newMessages.length > 0 && wss) {
+      console.log("emitting chat message");
+      wss.emit("chat", JSON.stringify(newMessages));
+      wss.send(JSON.stringify(newMessages));
+    }
+  });
 }

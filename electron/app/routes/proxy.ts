@@ -52,7 +52,7 @@ export const proxy = async (req: Request, res: Response) => {
       const resHeaders = { ...proxyRes.headers };
       delete resHeaders["content-encoding"];
 
-      if(proxyRes.statusCode === 401) {
+      if (proxyRes.statusCode === 401) {
         openAuthWindow();
       }
 
@@ -91,11 +91,9 @@ export const openAuthWindow = () => {
     width: 800,
     height: 600,
   });
-  authwin.loadURL(
-    "https://www.pathofexile.com/trade2/search/poe2/Standard/",
-  );
+  authwin.loadURL("https://www.pathofexile.com/trade2/search/poe2/Standard/");
   return authwin;
-}
+};
 
 export const wsProxy = async (clientSocket: WebSocket, req: Request) => {
   // Split and filter the URL path to remove empty strings.

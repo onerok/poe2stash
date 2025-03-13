@@ -189,3 +189,18 @@ export interface ExtendedMod {
     max: string;
   }>;
 }
+
+export interface ChatOffer {
+  message: string;
+  timestamp: string;
+  characterName: string;
+  item: {
+    name: string;
+    price: string;
+    stashTab: string;
+    position: {
+      left: number;
+      top: number;
+    };
+  };
+}
