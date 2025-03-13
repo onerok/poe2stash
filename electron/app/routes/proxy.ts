@@ -52,7 +52,7 @@ export const proxy = async (req: Request, res: Response) => {
       const resHeaders = { ...proxyRes.headers };
       delete resHeaders["content-encoding"];
 
-      if (proxyRes.statusCode === 400) {
+      if (proxyRes.statusCode === 401) {
         openAuthWindow();
       }
 
