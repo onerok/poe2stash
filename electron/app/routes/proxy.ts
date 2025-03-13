@@ -5,7 +5,6 @@ import { RateLimits } from "../services/RateLimitParser";
 
 const hosts = [{ url: "www.pathofexile.com" }];
 
-let pending = new Array<Promise<void>>();
 export const proxy = async (req: Request, res: Response) => {
   const proxyTo = req.url.split("/")[1];
   console.log({ proxyTo });
